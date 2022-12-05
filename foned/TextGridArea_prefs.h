@@ -33,6 +33,7 @@ Prefs_begin (TextGridArea)
 	InstancePrefs_addBool         (TextGridArea, align_includeWords,       1, true)
 	InstancePrefs_addBool         (TextGridArea, align_includePhonemes,    1, false)
 	InstancePrefs_addBool         (TextGridArea, align_allowSilences,      1, false)
+	InstancePrefs_addBool         (TextGridArea, allBoundaryLines_show,    1, false)
 
 Prefs_end (TextGridArea)
 

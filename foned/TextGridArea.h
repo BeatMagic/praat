@@ -38,6 +38,8 @@ Thing_define (TextGridArea, FunctionArea) {
 	autostring32 findString;
 	SpellingChecker spellingChecker;
 
+	GuiMenuItem boundaryLinesToggle;
+
 private:
 	void v_specializedHighlightBackground () const
 		override;

@@ -329,6 +329,17 @@ static void do_drawIntervalTier (TextGridArea me, IntervalTier tier, integer iti
 			Graphics_line (my graphics(), startInterval, 0.0, startInterval, 1.0);
 
 			/*
+				Draw a red dotted line for each boundary
+			*/
+			if (my instancePref_allBoundaryLines_show() && itier == my selectedTier) {
+				Graphics_setColour (my graphics(), Melder_RED);
+				Graphics_setLineType (my graphics(), Graphics_DOTTED);
+				Graphics_setLineWidth (my graphics(), platformUsesAntiAliasing ? 2.0 : 1.0);
+				Graphics_line (my graphics(), startInterval, 0.0, startInterval, 50); /* "50" just for temp use */
+				Graphics_setLineType (my graphics(), Graphics_DRAWN);
+			}
+
+			/*
 				Show alignment with cursor.
 			*/
 			if (startInterval == my startSelection()) {
@@ -1719,6 +1730,16 @@ static void menu_cb_AddToUserDictionary (TextGridArea me, EDITOR_ARGS) {
 }
 
 
+#pragma mark - TextGridArea BoundaryLines menu
+
+static void menu_cb_showAllBoundaryLines (TextGridArea me, EDITOR_ARGS) {
+	VOID_EDITOR
+	my setInstancePref_allBoundaryLines_show (! my instancePref_allBoundaryLines_show());   // toggle
+	GuiMenuItem_check (my boundaryLinesToggle, my instancePref_allBoundaryLines_show());   // in case we're called from a script
+	FunctionEditor_redraw (my functionEditor());
+	VOID_EDITOR_END
+}
+
 #pragma mark - TextGridArea all menus
 
 void structTextGridArea :: v_createMenus () {
@@ -1870,6 +1891,13 @@ void structTextGridArea :: v_createMenus () {
 		FunctionAreaMenu_addCommand (spellMenu, U"-- edit lexicon --", 0, nullptr, this);
 		FunctionAreaMenu_addCommand (spellMenu, U"Add selected word to user dictionary", 0,
 				menu_cb_AddToUserDictionary, this);
+	}
+
+	EditorMenu boundaryLinesMenu = Editor_addMenu (our functionEditor(), U"BoundaryLines", 0);
+	if (our editable()) {
+		our boundaryLinesToggle = FunctionAreaMenu_addCommand (boundaryLinesMenu, U"Show All Boundary Lines",
+			GuiMenu_CHECKBUTTON | (instancePref_allBoundaryLines_show() ? GuiMenu_TOGGLE_ON : 0),
+				menu_cb_showAllBoundaryLines, this);
 	}
 }
 void structTextGridArea :: v_updateMenuItems () {
