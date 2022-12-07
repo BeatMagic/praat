@@ -1840,21 +1840,35 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 	*/
 	if (my instancePref_pitch_show()) {
 		double pitchCursor_overt = undefined, pitchCursor_hidden = undefined;
+		double pitchCursor_semitones440_overt = undefined, pitchCursor_semitones440_hidden = undefined;
 		Graphics_setWindow (my graphics(), my startWindow(), my endWindow(), pitchViewFrom_hidden, pitchViewTo_hidden);
 		Graphics_setColour (my graphics(), 1.2 * Melder_BLUE);
 		if (my d_pitch) {
-			if (my startSelection() == my endSelection())
+			if (my startSelection() == my endSelection()) {
 				pitchCursor_hidden = Pitch_getValueAtTime (my d_pitch.get(), my startSelection(), my instancePref_pitch_unit(), 1);
-			else
+				pitchCursor_semitones440_hidden = Pitch_getValueAtTime (my d_pitch.get(), my startSelection(), kPitch_unit::SEMITONES_440, 1);
+			}
+			else {
 				pitchCursor_hidden = Pitch_getMean (my d_pitch.get(), my startSelection(), my endSelection(), my instancePref_pitch_unit());
+				pitchCursor_semitones440_hidden = Pitch_getMean (my d_pitch.get(), my startSelection(), my endSelection(), kPitch_unit::SEMITONES_440);
+			}
 			pitchCursor_overt = Function_convertToNonlogarithmic (my d_pitch.get(), pitchCursor_hidden, Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit());
+			pitchCursor_semitones440_overt = Function_convertToNonlogarithmic (my d_pitch.get(), pitchCursor_semitones440_hidden, Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440);
 			if (isdefined (pitchCursor_hidden)) {
 				Graphics_setColour (my graphics(), MelderColour (0.6, 0.0, 0.4));
 				Graphics_setTextAlignment (my graphics(), Graphics_LEFT, Graphics_HALF);
-				Graphics_text (my graphics(), my endWindow(), pitchCursor_hidden,
-					Melder_float (Melder_half (pitchCursor_overt)), U" ",
-					Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit(), Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL)
-				);
+				if (kPitch_unit::HERTZ == my instancePref_pitch_unit())
+					Graphics_text (my graphics(), my endWindow(), pitchCursor_hidden,
+						Melder_float (Melder_half (pitchCursor_overt)), U" ",
+						Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit(), Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL), U"\n",
+						Melder_float (Melder_half (pitchCursor_semitones440_overt + 69)), U" ",
+						Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440, Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL)
+					);
+				else
+					Graphics_text (my graphics(), my endWindow(), pitchCursor_hidden,
+						Melder_float (Melder_half (pitchCursor_overt)), U" ",
+						Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit(), Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL)
+					);
 				Graphics_setColour (my graphics(), 1.2 * Melder_BLUE);
 			}
 			if (isundef (pitchCursor_hidden) || Graphics_dyWCtoMM (my graphics(), pitchCursor_hidden - pitchViewFrom_hidden) > 4.0) {
