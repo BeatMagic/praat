@@ -463,6 +463,9 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 	- (void) mouseDragged: (NSEvent *) nsEvent {
 	 	[self   mouse: nsEvent   inPhase: structGuiDrawingArea_MouseEvent::Phase::DRAG];
 	}
+	- (void) mouseMoved: (NSEvent *) nsEvent {
+		[self   mouse: nsEvent   inPhase: structGuiDrawingArea_MouseEvent::Phase::DRAG];
+	}
 	- (void) mouseUp: (NSEvent *) nsEvent {
 	 	[self   mouse: nsEvent   inPhase: structGuiDrawingArea_MouseEvent::Phase::DROP];
 	}

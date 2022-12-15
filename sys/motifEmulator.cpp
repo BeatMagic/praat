@@ -2577,7 +2577,7 @@ static void on_lbuttonDown (HWND window, BOOL doubleClick, int x, int y, UINT fl
 static void on_mouseMove (HWND window, int x, int y, UINT flags) {
 	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
 	if (me) {
-		if (MEMBER (me, DrawingArea) && (flags & MK_LBUTTON)) {
+		if (MEMBER (me, DrawingArea)/* && (flags & MK_LBUTTON)*/) {
 			_GuiWinDrawingArea_handleMouse (me, structGuiDrawingArea_MouseEvent::Phase::DRAG, x, y);
 		} else FORWARD_WM_MOUSEMOVE (window, x, y, flags, DefWindowProc);
 	} else FORWARD_WM_MOUSEMOVE (window, x, y, flags, DefWindowProc);

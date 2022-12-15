@@ -180,7 +180,7 @@ bool structRealTierArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 		our dt = 0.0;
 		our dy = 0.0;
 		return FunctionEditor_UPDATE_NEEDED;
-	} else if (event -> isDrag() || event -> isDrop()) {
+	} else if ((event -> isDrag() && our isMoveWhileButtonDown) || event -> isDrop()) {
 		if (our anchorIsInFreePart) {
 			our ycursor = y_world;
 			return FunctionEditor_defaultMouseInWideDataView (our functionEditor(), event, x_world) || true;

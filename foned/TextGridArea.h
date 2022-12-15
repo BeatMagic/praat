@@ -38,7 +38,7 @@ Thing_define (TextGridArea, FunctionArea) {
 	autostring32 findString;
 	SpellingChecker spellingChecker;
 
-	GuiMenuItem boundaryLinesToggle;
+	GuiMenuItem boundaryLinesToggle, tierNotesToggle;
 
 private:
 	void v_specializedHighlightBackground () const
@@ -72,6 +72,7 @@ public:
 		return 30.0;
 	}
 	void v_updateText () override;
+	void v_updateTierNotesData () override;
 
 	#include "TextGridArea_prefs.h"
 };

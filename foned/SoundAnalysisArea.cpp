@@ -274,9 +274,41 @@ bool structSoundAnalysisArea :: v_mouse (GuiDrawingArea_MouseEvent event, double
 			}
 		}
 	}
-	if (x_world > our startWindow() && x_world < our endWindow())
+
+	if (our isMoveWhileButtonDown && x_world > our startWindow() && x_world < our endWindow())
 		our d_spectrogram_cursor = localY_fraction * our instancePref_spectrogram_viewTo()
-				+ (1.0 - localY_fraction) * our instancePref_spectrogram_viewFrom();
+			+ (1.0 - localY_fraction) * our instancePref_spectrogram_viewFrom();
+
+	if (x_world > our startWindow() && x_world < our endWindow()) {
+		const double pitchFloor_hidden_semitones440 = Function_convertStandardToSpecialUnit (Thing_dummyObject (Pitch),
+			our instancePref_pitch_floor(), Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440);
+		const double pitchCeiling_hidden_semitones440 = Function_convertStandardToSpecialUnit (Thing_dummyObject (Pitch),
+			our instancePref_pitch_ceiling(), Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440);
+		const double pitchFloor_overt_semitones440 = Function_convertToNonlogarithmic (Thing_dummyObject (Pitch),
+			pitchFloor_hidden_semitones440, Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440);
+		const double pitchCeiling_overt_semitones440 = Function_convertToNonlogarithmic (Thing_dummyObject (Pitch),
+			pitchCeiling_hidden_semitones440, Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440);
+		const double pitchViewFrom_overt_semitones440 = ( our instancePref_pitch_viewFrom() < our instancePref_pitch_viewTo() ? our instancePref_pitch_viewFrom() : pitchFloor_overt_semitones440 );
+		const double pitchViewTo_overt_semitones440 = ( our instancePref_pitch_viewFrom() < our instancePref_pitch_viewTo() ? our instancePref_pitch_viewTo() : pitchCeiling_overt_semitones440 );
+		const double pitchViewFrom_hidden_semitones440 = Function_isUnitLogarithmic (Thing_dummyObject (Pitch),
+			Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440) ? log10 (pitchViewFrom_overt_semitones440) : pitchViewFrom_overt_semitones440;
+		const double pitchViewTo_hidden_semitones440 = Function_isUnitLogarithmic (Thing_dummyObject (Pitch),
+			Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440) ? log10 (pitchViewTo_overt_semitones440) : pitchViewTo_overt_semitones440;
+		our d_pitchGrid_cursor = localY_fraction * pitchViewTo_hidden_semitones440 + (1.0 - localY_fraction) * pitchViewFrom_hidden_semitones440;
+		our d_pitchInteger = int(our d_pitchGrid_cursor);
+		double pitchDecimal = our d_pitchGrid_cursor - our d_pitchInteger;
+		if(pitchDecimal > 0) {
+			our d_pitchInteger += (pitchDecimal > 0.5 ? 1 : 0);
+		}
+		else {
+			our d_pitchInteger += (pitchDecimal > -0.5 ? 0 : -1);
+		}
+	}
+
+	if (event -> isClick() && event->commandKeyPressed && our d_clickToChangePitchCallback && our d_changedBoss) {
+		our d_clickToChangePitchCallback (our d_changedBoss, our d_pitchInteger + 69);
+	}
+
 	return FunctionEditor_defaultMouseInWideDataView (our functionEditor(), event, x_world);
 }
 
@@ -847,6 +879,14 @@ static void menu_cb_showPitch (SoundAnalysisArea me, EDITOR_ARGS) {
 	VOID_EDITOR
 		my setInstancePref_pitch_show (! my instancePref_pitch_show());   // toggle
 		GuiMenuItem_check (my pitchToggle, my instancePref_pitch_show());   // in case we're called from a script
+		FunctionEditor_redraw (my functionEditor());
+	VOID_EDITOR_END
+}
+
+static void menu_cb_showPitchGrid (SoundAnalysisArea me, EDITOR_ARGS) {
+	VOID_EDITOR
+		my setInstancePref_pitchGrid_show (! my instancePref_pitchGrid_show());   // toggle
+		GuiMenuItem_check (my pitchGridToggle, my instancePref_pitchGrid_show());   // in case we're called from a script
 		FunctionEditor_redraw (my functionEditor());
 	VOID_EDITOR_END
 }
@@ -1651,6 +1691,10 @@ void structSoundAnalysisArea :: v_createMenus () {
 			GuiMenu_CHECKBUTTON | (instancePref_pitch_show() ? GuiMenu_TOGGLE_ON : 0),
 			menu_cb_showPitch, this
 		);
+		our pitchGridToggle = FunctionAreaMenu_addCommand (menu, U"Show pitch grid",
+			GuiMenu_CHECKBUTTON | (instancePref_pitchGrid_show() ? GuiMenu_TOGGLE_ON : 0),
+			menu_cb_showPitchGrid, this
+		);
 		FunctionAreaMenu_addCommand (menu, U"Pitch settings...", 0,
 				menu_cb_pitchSettings, this);
 		FunctionAreaMenu_addCommand (menu, U"Advanced pitch settings...", 0,
@@ -1763,6 +1807,21 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 	const double pitchViewTo_hidden = Function_isUnitLogarithmic (Thing_dummyObject (Pitch),
 			Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit()) ? log10 (pitchViewTo_overt) : pitchViewTo_overt;
 
+	const double pitchFloor_hidden_semitones440 = Function_convertStandardToSpecialUnit (Thing_dummyObject (Pitch),
+			my instancePref_pitch_floor(), Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440);
+	const double pitchCeiling_hidden_semitones440 = Function_convertStandardToSpecialUnit (Thing_dummyObject (Pitch),
+			my instancePref_pitch_ceiling(), Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440);
+	const double pitchFloor_overt_semitones440 = Function_convertToNonlogarithmic (Thing_dummyObject (Pitch),
+			pitchFloor_hidden_semitones440, Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440);
+	const double pitchCeiling_overt_semitones440 = Function_convertToNonlogarithmic (Thing_dummyObject (Pitch),
+			pitchCeiling_hidden_semitones440, Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440);
+	const double pitchViewFrom_overt_semitones440 = ( my instancePref_pitch_viewFrom() < my instancePref_pitch_viewTo() ? my instancePref_pitch_viewFrom() : pitchFloor_overt_semitones440 );
+	const double pitchViewTo_overt_semitones440 = ( my instancePref_pitch_viewFrom() < my instancePref_pitch_viewTo() ? my instancePref_pitch_viewTo() : pitchCeiling_overt_semitones440 );
+	const double pitchViewFrom_hidden_semitones440 = Function_isUnitLogarithmic (Thing_dummyObject (Pitch),
+			Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440) ? log10 (pitchViewFrom_overt_semitones440) : pitchViewFrom_overt_semitones440;
+	const double pitchViewTo_hidden_semitones440 = Function_isUnitLogarithmic (Thing_dummyObject (Pitch),
+			Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440) ? log10 (pitchViewTo_overt_semitones440) : pitchViewTo_overt_semitones440;
+
 	if (my endWindow() - my startWindow() > my instancePref_longestAnalysis()) {
 		Graphics_setWindow (my graphics(), 0.0, 1.0, 0.0, 1.0);
 		Graphics_setFont (my graphics(), kGraphics_font::HELVETICA);
@@ -1834,6 +1893,47 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 	}
 
 	my v_draw_analysis_formants ();
+
+	if (my instancePref_pitchGrid_show()) {
+		Graphics_setWindow (my graphics(), my startWindow(), my endWindow(), pitchViewFrom_hidden_semitones440, pitchViewTo_hidden_semitones440);
+		Graphics_setLineType (my graphics(), Graphics_DOTTED);
+		Graphics_setLineWidth (my graphics(), 1.0);
+		Graphics_setColour (my graphics(), DataGuiColour_NONEDITABLE_SELECTED);
+
+		integer pitchBeginInt = int(pitchViewFrom_hidden_semitones440);
+		double pitchBegin = pitchViewFrom_hidden_semitones440 - pitchBeginInt;
+		if (pitchBegin > 0) {
+			pitchBegin = (pitchBegin >= 0.5 ? 1.5 : 0.5) + pitchBeginInt;
+		}
+		else {
+			pitchBegin = (pitchBegin < -0.5 ? -0.5 : 0.5) + pitchBeginInt;
+		}
+
+		for (double i = pitchBegin; i <= pitchViewTo_hidden_semitones440; i += 1.0) {
+			bool changeColor = my d_pitchInteger - 0.5 == i || my d_pitchInteger + 0.5 == i;
+			Graphics_setColour (my graphics(), changeColor ? Melder_YELLOW : DataGuiColour_NONEDITABLE_SELECTED);
+			Graphics_line (my graphics(), my startWindow(), i, my endWindow(), i);
+		}
+	}
+
+	/*
+		Draw tier notes.
+	*/
+	if (! my tierNotesData.empty()) {
+		Graphics_setWindow(my graphics(), my startWindow(), my endWindow(), pitchViewFrom_hidden_semitones440, pitchViewTo_hidden_semitones440);
+		Graphics_setLineType(my graphics(), Graphics_DRAWN);
+		for (integer i = 0; i < my tierNotesData.size(); ++i) {
+			Graphics_setColour(my graphics(), MelderColour(194.0 / 255.0, 102.0 / 255.0, 255.0 / 255.0, 0.5));
+			double bottom = my tierNotesData.at(i).at(2) - 69 - 0.5;
+			double top = my tierNotesData.at(i).at(2) - 69 + 0.5;
+			if (my tierNotesData.at(i).at(2) == -1) {
+				bottom = pitchViewFrom_hidden_semitones440;
+				top = pitchViewTo_hidden_semitones440;
+				Graphics_setColour(my graphics(), MelderColour(228.0 / 255.0, 78.0 / 255.0, 78.0 / 255.0, 0.5));
+			}
+			Graphics_fillRectangle(my graphics(), my tierNotesData.at(i).at(0), my tierNotesData.at(i).at(1), bottom, top);
+		}
+	}
 
 	/*
 		Draw vertical scales.
@@ -1983,6 +2083,19 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 			Graphics_line (our graphics, our startSelection, our p_spectrogram_viewFrom, our startSelection, our p_spectrogram_viewTo);
 		if (our endSelection > our startWindow && our endSelection < our endWindow && our endSelection != our startSelection)
 			Graphics_line (our graphics, our endSelection, our p_spectrogram_viewFrom, our endSelection, our p_spectrogram_viewTo);*/
+		Graphics_setLineType (my graphics(), Graphics_DRAWN);
+	}
+	if (my instancePref_pitchGrid_show()) {
+		/*
+			Draw pitchGrid's vertical scales. Don't forget setWindow().
+		*/
+		Graphics_setWindow (my graphics(), my startWindow(), my endWindow(), pitchViewFrom_hidden_semitones440, pitchViewTo_hidden_semitones440);
+		Graphics_setColour (my graphics(), MelderColour(1, 0.576, 0.008));
+		Graphics_setTextAlignment (my graphics(), Graphics_LEFT, Graphics_HALF);
+		Graphics_text (my graphics(), my endWindow(), my d_pitchGrid_cursor,
+			Melder_float (Melder_half (my d_pitchInteger + 69)), U" ",
+			Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) kPitch_unit::SEMITONES_440, Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL)
+		);
 		Graphics_setLineType (my graphics(), Graphics_DRAWN);
 	}
 }

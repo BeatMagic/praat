@@ -832,6 +832,7 @@ static void do_zoomIn (FunctionEditor me) {
 	my v_windowChanged ();
 	Melder_assert (isdefined (my startSelection));   // precondition of v_updateText()
 	my v_updateText ();
+	my v_updateTierNotesData ();
 	updateScrollBar (me);
 	FunctionEditor_redraw (me);
 	if (my classPref_synchronizedZoomAndScroll())
@@ -852,6 +853,7 @@ static void do_zoomOut (FunctionEditor me) {
 	my v_windowChanged ();
 	Melder_assert (isdefined (my startSelection));   // precondition of v_updateText()
 	my v_updateText ();
+	my v_updateTierNotesData ();
 	updateScrollBar (me);
 	FunctionEditor_redraw (me);
 	if (my classPref_synchronizedZoomAndScroll())
@@ -1026,6 +1028,7 @@ static void gui_cb_scroll (FunctionEditor me, GuiScrollBarEvent event) {
 		my v_windowChanged ();
 		Melder_assert (isdefined (my startSelection));   // precondition of v_updateText()
 		my v_updateText ();
+		my v_updateTierNotesData ();
 		//updateScrollBar (me);
 		FunctionEditor_redraw (me);
 		if (! my group || ! my classPref_synchronizedZoomAndScroll())
@@ -1131,6 +1134,14 @@ void structFunctionEditor :: v_updateText () {
 		FunctionArea area = static_cast <FunctionArea> (our functionAreas [iarea].get());
 		if (area)
 			area -> v_updateText ();
+	}
+}
+
+void structFunctionEditor :: v_updateTierNotesData () {
+	for (integer iarea = 1; iarea <= FunctionEditor_MAXIMUM_NUMBER_OF_FUNCTION_AREAS; iarea ++) {
+		FunctionArea area = static_cast <FunctionArea> (our functionAreas [iarea].get());
+		if (area)
+			area -> v_updateTierNotesData ();
 	}
 }
 
@@ -1413,6 +1424,12 @@ bool structFunctionEditor :: v_mouseInWideDataView (GuiDrawingArea_MouseEvent ev
 		for (integer iarea = 1; iarea <= FunctionEditor_MAXIMUM_NUMBER_OF_FUNCTION_AREAS; iarea ++) {
 			FunctionArea area = static_cast <FunctionArea> (our functionAreas [iarea].get());
 			if (area)
+				area -> isClickAnchor = area -> isMoveWhileButtonDown = area -> y_fraction_globalIsInside (globalY_fraction);
+		}
+	if (event -> isDrag ())
+		for (integer iarea = 1; iarea <= FunctionEditor_MAXIMUM_NUMBER_OF_FUNCTION_AREAS; iarea ++) {
+			FunctionArea area = static_cast <FunctionArea> (our functionAreas [iarea].get());
+			if (area)
 				area -> isClickAnchor = area -> y_fraction_globalIsInside (globalY_fraction);
 		}
 	{// scope
@@ -1433,7 +1450,7 @@ bool structFunctionEditor :: v_mouseInWideDataView (GuiDrawingArea_MouseEvent ev
 		for (integer iarea = 1; iarea <= FunctionEditor_MAXIMUM_NUMBER_OF_FUNCTION_AREAS; iarea ++) {
 			FunctionArea area = static_cast <FunctionArea> (our functionAreas [iarea].get());
 			if (area)
-				area -> isClickAnchor = false;
+				area -> isClickAnchor = area -> isMoveWhileButtonDown = false;
 		}
 	}
 	return result;
@@ -1461,6 +1478,8 @@ static void gui_drawingarea_cb_mouse (FunctionEditor me, GuiDrawingArea_MouseEve
 		}
 		my clickWasModifiedByShiftKey = event -> shiftKeyPressed;
 		my anchorIsInSelectionViewer = my isInSelectionViewer (x_pxlt);
+		my anchorIsInWideDataView = ( y_pxlt > my dataBottom_pxlt() && y_pxlt < my dataTop_pxlt() );
+	} else if (event -> isDrag()) {
 		my anchorIsInWideDataView = ( y_pxlt > my dataBottom_pxlt() && y_pxlt < my dataTop_pxlt() );
 	}
 	if (my anchorIsInSelectionViewer) {

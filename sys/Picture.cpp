@@ -113,6 +113,7 @@ static void gui_drawingarea_cb_mouse (Picture me, GuiDrawingArea_MouseEvent even
 		integer ix, iy;
 	};
 	static Block anchorBlock, previousBlock;
+	static bool isMoveWhileButtonDown = false;
 	double xWC, yWC;
 	Graphics_DCtoWC (my selectionGraphics.get(), event -> x, event -> y, & xWC, & yWC);
 	const Block currentBlock {
@@ -133,7 +134,8 @@ static void gui_drawingarea_cb_mouse (Picture me, GuiDrawingArea_MouseEvent even
 			anchorBlock = currentBlock;
 		}
 		didBlockChange = true;
-	} else if (event -> isDrag() || event -> isDrop()) {
+		isMoveWhileButtonDown = true;
+	} else if ((event -> isDrag() && isMoveWhileButtonDown) || event -> isDrop()) {
 		didBlockChange = ( currentBlock. ix != previousBlock. ix || currentBlock. iy != previousBlock. iy );
 	}
 	if (didBlockChange) {
@@ -157,6 +159,8 @@ static void gui_drawingarea_cb_mouse (Picture me, GuiDrawingArea_MouseEvent even
 	if (event -> isDrop() && my selectionChangedCallback)
 		my selectionChangedCallback (me, my selectionChangedClosure,
 			my selx1, my selx2, my sely1, my sely2);
+	if (event -> isDrop())
+		isMoveWhileButtonDown = false;
 }
 
 autoPicture Picture_create (GuiDrawingArea drawingArea, bool sensitive) {

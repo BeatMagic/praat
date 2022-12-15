@@ -214,6 +214,52 @@ static void insertBoundaryOrPoint (TextGridArea me, integer itier, double t1, do
 	my setSelection (t1, t1);
 }
 
+static double getPitchFromIntervalTierText(conststring32 text) {
+	double ret = 0.0;
+	for (const char32 *p = & text [0]; *p != U'\0'; p ++) {
+		char32 kar = *p;
+		if (kar < U'0' || kar > U'9') {
+			return -1;
+		}
+		ret = ret * 10.0 + (kar - U'0');
+	}
+
+	if (ret < 0.0 || ret > 128.0) {
+		return -1;
+	}
+
+	return ret;
+}
+
+static std::vector<std::vector<double>> getSelectedTierData(TextGridArea me) {
+	std::vector<std::vector<double>> tierNotesData;
+	const Function anyTier = my textGrid() -> tiers->at [my selectedTier];
+	const bool isIntervalTier = ( anyTier -> classInfo == classIntervalTier );
+	if (! isIntervalTier)
+		return tierNotesData;
+
+	auto tier = (IntervalTier) anyTier;
+	const integer numberOfIntervals = tier -> intervals.size;
+	for (integer iinterval = 1; iinterval <= numberOfIntervals; iinterval ++) {
+		const TextInterval interval = tier -> intervals.at [iinterval];
+		/* mutable clip */ double startInterval = interval -> xmin, endInterval = interval -> xmax;
+		Melder_clipLeft (my tmin(), & startInterval);
+		Melder_clipRight (& endInterval, my tmax());
+		if (startInterval >= endInterval)
+			continue;
+
+		if (interval -> text && endInterval >= my startWindow() && startInterval <= my endWindow()) {
+			const double t1 = std::max (my startWindow(), startInterval);
+			const double t2 = std::min (my endWindow(), endInterval);
+			double pitch = getPitchFromIntervalTierText(interval -> text.get());
+			std::vector<double> tierNoteData {t1, t2, pitch};
+			tierNotesData.push_back(tierNoteData);
+		}
+	}
+
+	return tierNotesData;
+}
+
 
 #pragma mark - TextGridArea info
 
@@ -576,6 +622,8 @@ bool structTextGridArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 		double startInterval, endInterval;
 		timeToInterval (this, x_world, our selectedTier, & startInterval, & endInterval);
 
+		our borrowedSoundAnalysisArea -> tierNotesData = our instancePref_allTierNotes_show() ? getSelectedTierData(this) : std::vector<std::vector<double>>{};
+
 		if (event -> isLeftBottomFunctionKeyPressed()) {
 			our setSelection (x_world - startInterval < endInterval - x_world ? startInterval : endInterval, our endSelection());   // to nearest boundary
 			return FunctionEditor_UPDATE_NEEDED;
@@ -715,7 +763,7 @@ bool structTextGridArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 				our setSelection (startInterval, endInterval);
 		}
 	} else if (event -> isDrag ()) {
-		if (our editable() && isdefined (our anchorTime) && our draggingTiers.size > 0) {
+		if (our isMoveWhileButtonDown && our editable() && isdefined (our anchorTime) && our draggingTiers.size > 0) {
 			our draggingTime = x_world;
 			if (! our hasBeenDraggedBeyondVicinityRadiusAtLeastOnce) {
 				const double distanceToAnchor_mm = fabs (Graphics_dxWCtoMM (our graphics(), x_world - our anchorTime));
@@ -723,6 +771,7 @@ bool structTextGridArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 					our hasBeenDraggedBeyondVicinityRadiusAtLeastOnce = true;
 			}
 		}
+		//return FunctionEditor_defaultMouseInWideDataView (our functionEditor(), event, x_world);
 	} else if (event -> isDrop ()) {
 		if (isundef (our anchorTime) || our draggingTiers.size == 0) {   // TODO: figure out a circumstance under which anchorTime could be undefined
 			our draggingTime = undefined;
@@ -1067,6 +1116,7 @@ static void gui_text_cb_changed (TextGridArea me, GuiTextEvent /* event */) {
 			if (selectedInterval) {
 				TextInterval interval = intervalTier -> intervals.at [selectedInterval];
 				TextInterval_setText (interval, text.get());
+				my borrowedSoundAnalysisArea -> tierNotesData = my instancePref_allTierNotes_show() ? getSelectedTierData(me) : std::vector<std::vector<double>>{};
 				my suppressTextCursorJump = true;
 				FunctionArea_broadcastDataChanged (me);
 				my suppressTextCursorJump = false;
@@ -1078,6 +1128,28 @@ static void gui_text_cb_changed (TextGridArea me, GuiTextEvent /* event */) {
 				point -> mark. reset();
 				if (Melder_findInk (text.get()))   // any visible characters?
 					point -> mark = Melder_dup_f (text.get());
+				my suppressTextCursorJump = true;
+				FunctionArea_broadcastDataChanged (me);
+				my suppressTextCursorJump = false;
+			}
+		}
+	}
+}
+
+static void soundAnalysisArea_cb_clickToChangePitch(TextGridArea me, integer newPitch) {
+	trace (my suppressRedraw);
+	if (my suppressRedraw)
+		return;   // prevent infinite loop if 'draw' method or Editor_broadcastChange calls GuiText_setString
+	if (my selectedTier) {
+		IntervalTier intervalTier;
+		TextTier textTier;
+		AnyTextGridTier_identifyClass (my textGrid() -> tiers->at [my selectedTier], & intervalTier, & textTier);
+		if (intervalTier) {
+			const integer selectedInterval = getSelectedInterval (me);
+			if (selectedInterval) {
+				TextInterval interval = intervalTier -> intervals.at [selectedInterval];
+				TextInterval_setText (interval, Melder_integer(newPitch));
+				my borrowedSoundAnalysisArea -> tierNotesData = my instancePref_allTierNotes_show() ? getSelectedTierData(me) : std::vector<std::vector<double>>{};
 				my suppressTextCursorJump = true;
 				FunctionArea_broadcastDataChanged (me);
 				my suppressTextCursorJump = false;
@@ -1740,6 +1812,19 @@ static void menu_cb_showAllBoundaryLines (TextGridArea me, EDITOR_ARGS) {
 	VOID_EDITOR_END
 }
 
+
+#pragma mark - TextGridArea TierNotes menu
+
+static void menu_cb_showAllTierNotes (TextGridArea me, EDITOR_ARGS) {
+	VOID_EDITOR
+	my setInstancePref_allTierNotes_show (! my instancePref_allTierNotes_show());   // toggle
+	GuiMenuItem_check (my tierNotesToggle, my instancePref_allTierNotes_show());   // in case we're called from a script
+	my borrowedSoundAnalysisArea -> tierNotesData = my instancePref_allTierNotes_show() ? getSelectedTierData(me) : std::vector<std::vector<double>>{};
+	FunctionEditor_redraw (my functionEditor());
+	VOID_EDITOR_END
+}
+
+
 #pragma mark - TextGridArea all menus
 
 void structTextGridArea :: v_createMenus () {
@@ -1899,6 +1984,14 @@ void structTextGridArea :: v_createMenus () {
 			GuiMenu_CHECKBUTTON | (instancePref_allBoundaryLines_show() ? GuiMenu_TOGGLE_ON : 0),
 				menu_cb_showAllBoundaryLines, this);
 	}
+
+	if (our borrowedSoundAnalysisArea) {
+		EditorMenu tierNotesMenu = Editor_addMenu (our functionEditor(), U"TierNotes", 0);
+		our tierNotesToggle = FunctionAreaMenu_addCommand (tierNotesMenu, U"Show All Tier Notes",
+			GuiMenu_CHECKBUTTON | (instancePref_allTierNotes_show() ? GuiMenu_TOGGLE_ON : 0),
+				menu_cb_showAllTierNotes, this);
+		our borrowedSoundAnalysisArea -> setClickToChangePitchCallback(soundAnalysisArea_cb_clickToChangePitch, this);
+	}
 }
 void structTextGridArea :: v_updateMenuItems () {
 	TextGridArea_Parent :: v_updateMenuItems ();
@@ -1942,6 +2035,11 @@ void structTextGridArea :: v_updateText () {
 		GuiText_setSelection (our functionEditor() -> textArea, cursor, cursor);
 		our suppressRedraw = false;
 	}
+}
+
+void structTextGridArea :: v_updateTierNotesData () {
+	if (our borrowedSoundAnalysisArea)
+		our borrowedSoundAnalysisArea -> tierNotesData = our instancePref_allTierNotes_show() ? getSelectedTierData(this) : std::vector<std::vector<double>>{};
 }
 
 

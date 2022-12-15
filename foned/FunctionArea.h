@@ -148,6 +148,10 @@ public:
 		functionEditor() -> endSelection = endSelection;
 	}
 	bool isClickAnchor = false;
+	/*
+		indicate whether the area is activated by click.
+	*/
+	bool isMoveWhileButtonDown = false;
 	bool y_fraction_globalIsInside (double globalY_fraction) const {
 		const double y_pxlt = globalY_fraction_to_pxlt (globalY_fraction);
 		return y_pxlt >= our bottom_pxlt() && y_pxlt < our top_pxlt();
@@ -199,6 +203,7 @@ public:
 	virtual double maximumInitialLengthOfWindow() { return undefined; }
 
 	virtual void v_updateText () { }
+	virtual void v_updateTierNotesData () {}
 
 	#include "FunctionArea_prefs.h"
 };

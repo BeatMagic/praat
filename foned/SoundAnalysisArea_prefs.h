@@ -37,6 +37,7 @@ Prefs_begin (SoundAnalysisArea)
 	InstancePrefs_addDouble  (SoundAnalysisArea, spectrogram_dynamicCompression,  2, U"0.0")   // 0..1
 	InstancePrefs_addBool    (SoundAnalysisArea, spectrogram_picture_garnish,     1, true)
 	InstancePrefs_addBool    (SoundAnalysisArea, pitch_show,                      1, true)
+	InstancePrefs_addBool    (SoundAnalysisArea, pitchGrid_show,                  1, false)
 	InstancePrefs_addDouble  (SoundAnalysisArea, pitch_floor,                     1, U"75.0")
 	InstancePrefs_addDouble  (SoundAnalysisArea, pitch_ceiling,                   1, U"500.0")
 	InstancePrefs_addEnum    (SoundAnalysisArea, pitch_unit,                      1, kPitch_unit, DEFAULT)

@@ -203,6 +203,10 @@ Thing_define (FunctionEditor, Editor) {
 	virtual int v_playCallback (int phase, double startTime, double endTime, double currentTime);
 	virtual void v_updateText ();
 	virtual void v_drawLegends () { }
+	virtual void v_updateTierNotesData();
+	/*
+		update TierNotesData for TextGridArea
+	*/
 
     #include "FunctionEditor_prefs.h"
 

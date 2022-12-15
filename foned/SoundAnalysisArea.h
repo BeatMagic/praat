@@ -38,12 +38,17 @@ Thing_define (SoundAnalysisArea, FunctionArea) {
 	}
 
 	autoSpectrogram d_spectrogram;
-	double d_spectrogram_cursor;
+	double d_spectrogram_cursor, d_pitchGrid_cursor;
+	integer d_pitchInteger;
 	autoPitch d_pitch;
 	autoIntensity d_intensity;
 	autoFormant d_formant;
 	autoPointProcess d_pulses;
 	GuiMenuItem spectrogramToggle, pitchToggle, intensityToggle, formantToggle, pulsesToggle;
+	GuiMenuItem pitchGridToggle;
+	std::vector<std::vector<double>> tierNotesData;
+	MelderCallback <void, structThing, integer> d_clickToChangePitchCallback;
+	Thing d_changedBoss;
 
 	virtual bool v_hasSpectrogram () { return true; }
 	virtual bool v_hasPitch       () { return true; }
@@ -62,11 +67,15 @@ public:
 		our v_reset_analysis ();
 	}
 	bool hasContentToShow () {
-		return our instancePref_spectrogram_show() || our instancePref_pitch_show() ||
+		return our instancePref_spectrogram_show() || our instancePref_pitch_show() || our instancePref_pitchGrid_show() ||
 				our instancePref_intensity_show() || our instancePref_formant_show();
 	}
 	bool hasPulsesToShow () {
 		return our instancePref_pulses_show() && our endWindow() - our startWindow() <= our instancePref_longestAnalysis() && our d_pulses;
+	}
+	void setClickToChangePitchCallback(MelderCallback <void, structThing, integer> clickToChangePitchCallback, Thing changedBoss) {
+		our d_clickToChangePitchCallback = clickToChangePitchCallback;
+		our d_changedBoss = changedBoss;
 	}
 
 public:
