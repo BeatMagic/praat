@@ -446,7 +446,7 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 			event. shiftKeyPressed = modifiers & NSShiftKeyMask;
 			event. optionKeyPressed = modifiers & NSAlternateKeyMask;
 			event. commandKeyPressed = modifiers & NSCommandKeyMask;
-			event. capsKeyPressed = modifiers & NSAlphaShiftKeyMask;
+			event. capsKeyPressed = modifiers & NSControlKeyMask;
 			try {
 				my mouseCallback (my mouseBoss, & event);
 			} catch (MelderError) {
