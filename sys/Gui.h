@@ -476,6 +476,7 @@ typedef struct structGuiDrawingArea_MouseEvent {
 	bool isDrag()  const { return our phase == Phase::DRAG; }
 	bool isDrop()  const { return our phase == Phase::DROP; }
 	bool shiftKeyPressed, commandKeyPressed, optionKeyPressed;
+	bool capsKeyPressed;
 	bool isLeftBottomFunctionKeyPressed () const {
 		return theCommandKeyIsToTheLeftOfTheOptionKey ? our commandKeyPressed : our optionKeyPressed;
 	}

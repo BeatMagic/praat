@@ -305,7 +305,7 @@ bool structSoundAnalysisArea :: v_mouse (GuiDrawingArea_MouseEvent event, double
 		}
 	}
 
-	if (event -> isClick() && event->commandKeyPressed && our d_clickToChangePitchCallback && our d_changedBoss) {
+	if (event -> isClick() && event->capsKeyPressed && our d_clickToChangePitchCallback && our d_changedBoss) {
 		our d_clickToChangePitchCallback (our d_changedBoss, our d_pitchInteger + 69);
 	}
 
@@ -1898,7 +1898,8 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		Graphics_setWindow (my graphics(), my startWindow(), my endWindow(), pitchViewFrom_hidden_semitones440, pitchViewTo_hidden_semitones440);
 		Graphics_setLineType (my graphics(), Graphics_DOTTED);
 		Graphics_setLineWidth (my graphics(), 1.0);
-		Graphics_setColour (my graphics(), DataGuiColour_NONEDITABLE_SELECTED);
+		//Graphics_setColour (my graphics(), DataGuiColour_NONEDITABLE_SELECTED);
+		Graphics_setColour (my graphics(), Melder_YELLOW);
 
 		integer pitchBeginInt = int(pitchViewFrom_hidden_semitones440);
 		double pitchBegin = pitchViewFrom_hidden_semitones440 - pitchBeginInt;
@@ -1911,8 +1912,9 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 
 		for (double i = pitchBegin; i <= pitchViewTo_hidden_semitones440; i += 1.0) {
 			bool changeColor = my d_pitchInteger - 0.5 == i || my d_pitchInteger + 0.5 == i;
-			Graphics_setColour (my graphics(), changeColor ? Melder_YELLOW : DataGuiColour_NONEDITABLE_SELECTED);
-			Graphics_line (my graphics(), my startWindow(), i, my endWindow(), i);
+			//Graphics_setColour (my graphics(), changeColor ? Melder_YELLOW : DataGuiColour_NONEDITABLE_SELECTED);
+			if (changeColor)
+				Graphics_line (my graphics(), my startWindow(), i, my endWindow(), i);
 		}
 	}
 

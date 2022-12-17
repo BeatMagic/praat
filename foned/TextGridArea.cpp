@@ -380,7 +380,7 @@ static void do_drawIntervalTier (TextGridArea me, IntervalTier tier, integer iti
 			if (my instancePref_allBoundaryLines_show() && itier == my selectedTier) {
 				Graphics_setColour (my graphics(), Melder_RED);
 				Graphics_setLineType (my graphics(), Graphics_DOTTED);
-				Graphics_setLineWidth (my graphics(), platformUsesAntiAliasing ? 2.0 : 1.0);
+				Graphics_setLineWidth (my graphics(), 1.0);
 				Graphics_line (my graphics(), startInterval, 0.0, startInterval, 50); /* "50" just for temp use */
 				Graphics_setLineType (my graphics(), Graphics_DRAWN);
 			}
@@ -899,6 +899,9 @@ bool structTextGridArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 				}
 			}
 		}
+
+		if (our borrowedSoundAnalysisArea && our instancePref_allTierNotes_show())
+			our borrowedSoundAnalysisArea -> tierNotesData = getSelectedTierData(this);
 
 		/*
 			Select the drop site.

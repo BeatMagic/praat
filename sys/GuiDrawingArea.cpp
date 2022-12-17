@@ -78,6 +78,7 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 			event. shiftKeyPressed = (((GdkEventButton *) e) -> state & GDK_SHIFT_MASK) != 0;
 			event. commandKeyPressed = (((GdkEventButton *) e) -> state & GDK_CONTROL_MASK) != 0;
 			event. optionKeyPressed = (((GdkEventButton *) e) -> state & GDK_MOD1_MASK) != 0;
+			event. capsKeyPressed = (((GdkEventButton *) e) -> state & GDK_LOCK_MASK) != 0;
 			if (previousPhase == structGuiDrawingArea_MouseEvent::Phase::CLICK) {
 				/*
 					Apparently a double-click.
@@ -110,6 +111,7 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 			event. shiftKeyPressed = (((GdkEventButton *) e) -> state & GDK_SHIFT_MASK) != 0;
 			event. commandKeyPressed = (((GdkEventButton *) e) -> state & GDK_CONTROL_MASK) != 0;
 			event. optionKeyPressed = (((GdkEventButton *) e) -> state & GDK_MOD1_MASK) != 0;
+			event. capsKeyPressed = (((GdkEventButton *) e) -> state & GDK_LOCK_MASK) != 0;
 			try {
 				previousPhase = event. phase = structGuiDrawingArea_MouseEvent::Phase::DRAG;
 				my mouseCallback (my mouseBoss, & event);
@@ -129,6 +131,7 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 			event. shiftKeyPressed = (((GdkEventButton *) e) -> state & GDK_SHIFT_MASK) != 0;
 			event. commandKeyPressed = (((GdkEventButton *) e) -> state & GDK_CONTROL_MASK) != 0;
 			event. optionKeyPressed = (((GdkEventButton *) e) -> state & GDK_MOD1_MASK) != 0;
+			event. capsKeyPressed = (((GdkEventButton *) e) -> state & GDK_LOCK_MASK) != 0;
 			try {
 				previousPhase = event. phase = structGuiDrawingArea_MouseEvent::Phase::DROP;
 				my mouseCallback (my mouseBoss, & event);
@@ -267,6 +270,7 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 			event. shiftKeyPressed = GetKeyState (VK_SHIFT) < 0;
 			event. optionKeyPressed = GetKeyState (VK_MENU) < 0;
 			event. commandKeyPressed = GetKeyState (VK_CONTROL) < 0;
+			event. capsKeyPressed = GetKeyState (VK_CAPITAL) < 0;
 			try {
 				my mouseCallback (my mouseBoss, & event);
 			} catch (MelderError) {
@@ -442,6 +446,7 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 			event. shiftKeyPressed = modifiers & NSShiftKeyMask;
 			event. optionKeyPressed = modifiers & NSAlternateKeyMask;
 			event. commandKeyPressed = modifiers & NSCommandKeyMask;
+			event. capsKeyPressed = modifiers & NSAlphaShiftKeyMask;
 			try {
 				my mouseCallback (my mouseBoss, & event);
 			} catch (MelderError) {
