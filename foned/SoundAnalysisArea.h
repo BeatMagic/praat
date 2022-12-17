@@ -27,6 +27,7 @@
 #include "LongSound.h"
 
 #include "SoundAnalysisArea_enums.h"
+#include <vector>
 
 Thing_define (SoundAnalysisArea, FunctionArea) {
 	SampledXY soundOrLongSound() const { return static_cast <SampledXY> (our function()); }
