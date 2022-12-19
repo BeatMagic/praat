@@ -1923,18 +1923,25 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 	*/
 	if (! my tierNotesData.empty()) {
 		Graphics_setWindow(my graphics(), my startWindow(), my endWindow(), pitchViewFrom_hidden_semitones440, pitchViewTo_hidden_semitones440);
-		Graphics_setLineType(my graphics(), Graphics_DRAWN);
 		for (integer i = 0; i < my tierNotesData.size(); ++i) {
-			Graphics_setColour(my graphics(), MelderColour(194.0 / 255.0, 102.0 / 255.0, 255.0 / 255.0, 0.5));
 			double bottom = my tierNotesData.at(i).at(2) - 69 - 0.5;
 			double top = my tierNotesData.at(i).at(2) - 69 + 0.5;
 			if (my tierNotesData.at(i).at(2) == -1) {
 				bottom = pitchViewFrom_hidden_semitones440;
 				top = pitchViewTo_hidden_semitones440;
 				Graphics_setColour(my graphics(), MelderColour(228.0 / 255.0, 78.0 / 255.0, 78.0 / 255.0, 0.5));
+				Graphics_setLineType(my graphics(), Graphics_DRAWN);
+				Graphics_fillRectangle(my graphics(), my tierNotesData.at(i).at(0), my tierNotesData.at(i).at(1), bottom, top);
 			}
-			Graphics_fillRectangle(my graphics(), my tierNotesData.at(i).at(0), my tierNotesData.at(i).at(1), bottom, top);
+			else {
+				//Graphics_setColour(my graphics(), MelderColour(194.0 / 255.0, 102.0 / 255.0, 255.0 / 255.0, 0.5));
+				Graphics_setColour(my graphics(), MelderColour(130.0 / 255.0, 15.0 / 255.0, 207.0 / 255.0, 0.5));
+				Graphics_setLineType(my graphics(), Graphics_DOTTED);
+				Graphics_line(my graphics(), my tierNotesData.at(i).at(0), top, my tierNotesData.at(i).at(1), top);
+				Graphics_line(my graphics(), my tierNotesData.at(i).at(0), bottom, my tierNotesData.at(i).at(1), bottom);
+			}
 		}
+		Graphics_setLineType(my graphics(), Graphics_DRAWN);
 	}
 
 	/*
