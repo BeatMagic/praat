@@ -576,7 +576,7 @@ GuiDrawingArea GuiDrawingArea_create (GuiForm parent, int left, int right, int t
 			| GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK   // receive click events
 			| GDK_BUTTON_MOTION_MASK                            // receive motion notifies when a button is pressed
 			| GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK
-			| GDK_POINTER_MOTION_HINT_MASK);                    // receive fewer motion notify events (the cb might take time)
+			| GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK);                    // receive fewer motion notify events (the cb might take time)
 		gtk_widget_set_events (GTK_WIDGET (my d_widget), mask);
 		g_signal_connect (G_OBJECT (my d_widget), "draw",         G_CALLBACK (_guiGtkDrawingArea_drawCallback),       me.get());
 		g_signal_connect (G_OBJECT (my d_widget), "destroy",              G_CALLBACK (_guiGtkDrawingArea_destroyCallback),      me.get());
@@ -655,7 +655,7 @@ GuiDrawingArea GuiDrawingArea_create (GuiScrolledWindow parent, int width, int h
 			| GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK   // receive click events
 			| GDK_BUTTON_MOTION_MASK                            // receive motion notifies when a button is pressed
 			| GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK
-			| GDK_POINTER_MOTION_HINT_MASK);                    // receive fewer motion notify events (the cb might take time)
+			| GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK);                    // receive fewer motion notify events (the cb might take time)
 		gtk_widget_set_events (GTK_WIDGET (my d_widget), mask);
 		g_signal_connect (G_OBJECT (my d_widget), "draw",         G_CALLBACK (_guiGtkDrawingArea_drawCallback),       me.get());
 		g_signal_connect (G_OBJECT (my d_widget), "destroy",              G_CALLBACK (_guiGtkDrawingArea_destroyCallback),      me.get());
