@@ -113,6 +113,8 @@ Thing_define (GraphicsScreen, Graphics) {
 		override;
 	void v_fillRectangle (double x1DC, double x2DC, double y1DC, double y2DC)
 		override;
+	void v_fillRectangle_transparent (double x1DC, double x2DC, double y1DC, double y2DC)
+		override;
 	void v_circle (double xDC, double yDC, double rDC)
 		override;
 	void v_ellipse (double x1DC, double x2DC, double y1DC, double y2DC)

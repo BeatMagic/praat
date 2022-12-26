@@ -345,6 +345,44 @@ void structGraphicsScreen :: v_fillRectangle (double x1DC, double x2DC, double y
 	#endif
 }
 
+void structGraphicsScreen :: v_fillRectangle_transparent (double x1DC, double x2DC, double y1DC, double y2DC) {
+	ORDER_DC
+	#if cairo
+		if (! our d_cairoGraphicsContext)
+			return;
+		const double width = x2DC - x1DC + 1.0, height = y1DC - y2DC + 1.0;
+		if (width <= 0.0 || height <= 0.0)
+			return;
+		trace (U"x1DC ", x1DC, U", x2DC ", x2DC, U", y1DC ", y1DC, U", y2DC ", y2DC);
+		cairo_set_source_rgba (our d_cairoGraphicsContext, our colour. red, our colour. green, our colour. blue, 0.5);   // using transparency
+		cairo_rectangle (our d_cairoGraphicsContext, round (x1DC), round (y2DC), round (width), round (height));
+		cairo_fill (our d_cairoGraphicsContext);
+	#elif gdi
+		RECT rect;
+		rect. left = x1DC, rect. right = x2DC, rect. top = y2DC, rect. bottom = y1DC;   /* Superfluous? */
+		MY_BRUSH
+		SetROP2 (our d_gdiGraphicsContext, R2_MASKPEN);   // using a built-in pixel-combination formula; both R2_NOTXORPEN and R2_MASKPEN make some sense
+		Rectangle (our d_gdiGraphicsContext, x1DC, y2DC, x2DC + 1.0, y1DC + 1.0);
+		SetROP2 (our d_gdiGraphicsContext, R2_COPYPEN);
+		DEFAULT
+	#elif quartz
+		CGContextSetAlpha (our d_macGraphicsContext, 1.0);
+		CGContextSaveGState (our d_macGraphicsContext);
+		CGContextSetBlendMode (our d_macGraphicsContext, kCGBlendModeDarken);   // using a built-in pixel-combination formula
+		CGContextSetRGBFillColor (our d_macGraphicsContext, our colour.red, our colour.green, our colour.blue, 1.0);
+		CGContextFillRect (our d_macGraphicsContext, CGRectMake (x1DC, y2DC, x2DC - x1DC, y1DC - y2DC));
+		CGContextRestoreGState (our d_macGraphicsContext);
+	#else
+		double xyDC [10];
+		xyDC [0] = x1DC;	xyDC [1] = y1DC;
+		xyDC [2] = x2DC;	xyDC [3] = y1DC;
+		xyDC [4] = x2DC;	xyDC [5] = y2DC;
+		xyDC [6] = x1DC;	xyDC [7] = y2DC;
+		xyDC [8] = x1DC;	xyDC [9] = y1DC;
+		our v_fillArea (5, & xyDC [0]);
+	#endif
+}
+
 void structGraphicsPostscript :: v_fillRectangle (double x1DC, double x2DC, double y1DC, double y2DC) {
 	our d_printf (our d_file,
 		"N %.7g %.7g M %.7g %.7g lineto %.7g %.7g lineto %.7g %.7g lineto closepath fill\n",
@@ -936,6 +974,13 @@ void Graphics_fillRectangle (Graphics me, double x1WC, double x2WC, double y1WC,
 		op (FILL_RECTANGLE, 4); put (x1WC); put (x2WC); put (y1WC); put (y2WC);
 	} else
 		my v_fillRectangle (wdx (x1WC), wdx (x2WC), wdy (y1WC), wdy (y2WC));
+}
+
+void Graphics_fillRectangle_transparent (Graphics me, double x1WC, double x2WC, double y1WC, double y2WC) {
+	if (my recording) {
+		op (FILL_RECTANGLE, 4); put (x1WC); put (x2WC); put (y1WC); put (y2WC);
+	} else
+		my v_fillRectangle_transparent (wdx (x1WC), wdx (x2WC), wdy (y1WC), wdy (y2WC));
 }
 
 void Graphics_roundedRectangle (Graphics me, double x1WC, double x2WC, double y1WC, double y2WC, double r_mm) {

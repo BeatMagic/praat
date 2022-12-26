@@ -120,6 +120,7 @@ Thing_define (Graphics, Thing) {
 	virtual void v_fillArea (integer /* numberOfPoints */, double * /* xyDC */) { }
 	virtual void v_rectangle (double /* x1DC */, double /* x2DC */, double /* y1DC */, double /* y2DC */) { }
 	virtual void v_fillRectangle (double /* x1DC */, double /* x2DC */, double /* y1DC */, double /* y2DC */) { }
+	virtual void v_fillRectangle_transparent (double /* x1DC */, double /* x2DC */, double /* y1DC */, double /* y2DC */) { }
 	virtual void v_circle (double /* xDC */, double /* yDC */, double /* rDC */) { }
 	virtual void v_ellipse (double /* x1DC */, double /* x2DC */, double /* y1DC */, double /* y2DC */) { }
 	virtual void v_arc (double /* xDC */, double /* yDC */, double /* rDC */, double /* fromAngle */, double /* toAngle */) { }
@@ -201,6 +202,7 @@ void Graphics_imageFromFile (Graphics me, conststring32 relativeFileName, double
 void Graphics_line (Graphics me, double x1, double y1, double x2, double y2);
 void Graphics_rectangle (Graphics me, double x1, double x2, double y1, double y2);
 void Graphics_fillRectangle (Graphics me, double x1, double x2, double y1, double y2);
+void Graphics_fillRectangle_transparent (Graphics me, double x1, double x2, double y1, double y2);
 void Graphics_roundedRectangle (Graphics me, double x1, double x2, double y1, double y2, double r_mm);
 void Graphics_fillRoundedRectangle (Graphics me, double x1, double x2, double y1, double y2, double r_mm);
 void Graphics_function (Graphics me, const double y [], integer ix1, integer ix2, double x1, double x2);   // y [ix1..ix2]
