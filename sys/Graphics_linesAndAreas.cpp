@@ -368,7 +368,7 @@ void structGraphicsScreen :: v_fillRectangle_transparent (double x1DC, double x2
 	#elif quartz
 		CGContextSetAlpha (our d_macGraphicsContext, 1.0);
 		CGContextSaveGState (our d_macGraphicsContext);
-		CGContextSetBlendMode (our d_macGraphicsContext, kCGBlendModeDarken);   // using a built-in pixel-combination formula
+		CGContextSetBlendMode (our d_macGraphicsContext, kCGBlendModeLighten);   // using a built-in pixel-combination formula
 		CGContextSetRGBFillColor (our d_macGraphicsContext, our colour.red, our colour.green, our colour.blue, 1.0);
 		CGContextFillRect (our d_macGraphicsContext, CGRectMake (x1DC, y2DC, x2DC - x1DC, y1DC - y2DC));
 		CGContextRestoreGState (our d_macGraphicsContext);
