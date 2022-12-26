@@ -1923,7 +1923,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 	*/
 	if (! my tierNotesData.empty()) {
 		Graphics_setWindow(my graphics(), my startWindow(), my endWindow(), pitchViewFrom_hidden_semitones440, pitchViewTo_hidden_semitones440);
-		Graphics_setColour(my graphics(), Melder_LIME);
+		Graphics_setColour(my graphics(), MelderColour(0.0, 1.0, 0.0, 0.5));
 		Graphics_setLineType(my graphics(), Graphics_DRAWN);
 		for (integer i = 0; i < my tierNotesData.size(); ++i) {
 			double bottom = my tierNotesData.at(i).at(2) - 69 - 0.5;
