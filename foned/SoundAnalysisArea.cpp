@@ -1959,7 +1959,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 			if (isdefined (pitchCursor_hidden)) {
 				Graphics_setColour (my graphics(), MelderColour (0.6, 0.0, 0.4));
 				Graphics_setTextAlignment (my graphics(), Graphics_LEFT, Graphics_HALF);
-				if (kPitch_unit::HERTZ == my instancePref_pitch_unit())
+				if (kPitch_unit::HERTZ == my instancePref_pitch_unit() || kPitch_unit::HERTZ_LOGARITHMIC == my instancePref_pitch_unit())
 					Graphics_text (my graphics(), my endWindow(), pitchCursor_hidden,
 						Melder_float (Melder_half (pitchCursor_overt)), U" ",
 						Function_getUnitText (my d_pitch.get(), Pitch_LEVEL_FREQUENCY, (int) my instancePref_pitch_unit(), Function_UNIT_TEXT_SHORT | Function_UNIT_TEXT_GRAPHICAL), U"\n",
