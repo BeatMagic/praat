@@ -219,7 +219,7 @@ static double getPitchFromIntervalTierText(conststring32 text) {
 	for (const char32 *p = & text [0]; *p != U'\0'; p ++) {
 		char32 kar = *p;
 		if (kar < U'0' || kar > U'9') {
-			return -1;
+			return -2;
 		}
 		ret = ret * 10.0 + (kar - U'0');
 	}
