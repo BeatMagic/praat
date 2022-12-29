@@ -1839,6 +1839,30 @@ static void menu_cb_showAllTierNotes (TextGridArea me, EDITOR_ARGS) {
 }
 
 
+#pragma mark - TextGridArea TierNotes menu
+
+static void menu_cb_viewProportion (TextGridArea me, EDITOR_ARGS) {
+	EDITOR_FORM (U"View proportion", nullptr)
+		POSITIVE (soundAreaHeight, U"the height proportion of SoundArea (%)",  my default_soundAreaHeight())
+		POSITIVE (soundAnalysisAreaHeight, U"the height proportion of SoundAnalysisArea (%)",  my default_soundAnalysisAreaHeight())
+		POSITIVE (textGridAreaHeight, U"the height proportion of TextGridArea (%)",  my default_textGridAreaHeight())
+	EDITOR_OK
+		SET_REAL (soundAreaHeight,   my instancePref_soundAreaHeight())
+		SET_REAL (soundAnalysisAreaHeight,   my instancePref_soundAnalysisAreaHeight())
+		SET_REAL (textGridAreaHeight,   my instancePref_textGridAreaHeight())
+	EDITOR_DO
+		Melder_require (textGridAreaHeight + soundAreaHeight + soundAnalysisAreaHeight == 100.0,
+			U"The sum of these three values should equal 100, current: ",
+			textGridAreaHeight, U" + ", soundAreaHeight, U" + ", soundAnalysisAreaHeight, U" = ", textGridAreaHeight + soundAreaHeight + soundAnalysisAreaHeight
+		);
+		my setInstancePref_soundAreaHeight (soundAreaHeight);
+		my setInstancePref_soundAnalysisAreaHeight (soundAnalysisAreaHeight);
+		my setInstancePref_textGridAreaHeight (textGridAreaHeight);
+		FunctionEditor_redraw (my functionEditor());
+	EDITOR_END
+}
+
+
 #pragma mark - TextGridArea all menus
 
 void structTextGridArea :: v_createMenus () {
@@ -2005,6 +2029,11 @@ void structTextGridArea :: v_createMenus () {
 			GuiMenu_CHECKBUTTON | (instancePref_allTierNotes_show() ? GuiMenu_TOGGLE_ON : 0),
 				menu_cb_showAllTierNotes, this);
 		our borrowedSoundAnalysisArea -> setClickToChangePitchCallback(soundAnalysisArea_cb_clickToChangePitch, this);
+	}
+
+	if (our borrowedSoundArea && our borrowedSoundAnalysisArea) {
+		EditorMenu viewMenu = Editor_addMenu (our functionEditor(), U"View", 0);
+		FunctionAreaMenu_addCommand (viewMenu, U"View proportion...", 0, menu_cb_viewProportion, this);
 	}
 }
 void structTextGridArea :: v_updateMenuItems () {

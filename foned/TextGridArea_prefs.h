@@ -35,6 +35,9 @@ Prefs_begin (TextGridArea)
 	InstancePrefs_addBool         (TextGridArea, align_allowSilences,      1, false)
 	InstancePrefs_addBool         (TextGridArea, allBoundaryLines_show,    1, false)
 	InstancePrefs_addBool         (TextGridArea, allTierNotes_show,        1, false)
+	InstancePrefs_addDouble       (TextGridArea, soundAreaHeight,          1, U"25.0")
+	InstancePrefs_addDouble       (TextGridArea, soundAnalysisAreaHeight,  1, U"55.0")
+	InstancePrefs_addDouble       (TextGridArea, textGridAreaHeight,       1, U"20.0")
 
 Prefs_end (TextGridArea)
 
