@@ -517,7 +517,16 @@ void structTextGridArea :: v_drawInside () {
 		Graphics_setFontSize (our graphics(), 14);
 		Graphics_setTextAlignment (our graphics(), Graphics_RIGHT, Graphics_HALF);
 		Graphics_text (our graphics(), our startWindow(), 0.5,   tierIsSelected ? U"☞ " : U"", itier);
-		Graphics_setFontSize (our graphics(), oldFontSize);
+		integer fontSize = 9;
+		if (numberOfTiers < 5)
+			fontSize = 10;
+		if (numberOfTiers <= 3)
+			fontSize = 12;
+		if (numberOfTiers >= 6)
+			fontSize = 7;
+		if (numberOfTiers > 5)
+			fontSize = 8;
+		Graphics_setFontSize (our graphics(), our borrowedSoundArea && our borrowedSoundAnalysisArea ? fontSize : oldFontSize);
 		if (anyTier -> name && anyTier -> name [0]) {
 			Graphics_setTextAlignment (our graphics(), Graphics_LEFT,
 					our instancePref_showNumberOf() == kTextGridArea_showNumberOf::NOTHING ? Graphics_HALF : Graphics_BOTTOM);
@@ -622,7 +631,8 @@ bool structTextGridArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 		double startInterval, endInterval;
 		timeToInterval (this, x_world, our selectedTier, & startInterval, & endInterval);
 
-		our borrowedSoundAnalysisArea -> tierNotesData = our instancePref_allTierNotes_show() ? getSelectedTierData(this) : std::vector<std::vector<double>>{};
+		if (our borrowedSoundAnalysisArea && our instancePref_allTierNotes_show())
+			our borrowedSoundAnalysisArea -> tierNotesData = our instancePref_allTierNotes_show() ? getSelectedTierData(this) : std::vector<std::vector<double>>{};
 
 		if (event -> isLeftBottomFunctionKeyPressed()) {
 			our setSelection (x_world - startInterval < endInterval - x_world ? startInterval : endInterval, our endSelection());   // to nearest boundary
@@ -1119,7 +1129,8 @@ static void gui_text_cb_changed (TextGridArea me, GuiTextEvent /* event */) {
 			if (selectedInterval) {
 				TextInterval interval = intervalTier -> intervals.at [selectedInterval];
 				TextInterval_setText (interval, text.get());
-				my borrowedSoundAnalysisArea -> tierNotesData = my instancePref_allTierNotes_show() ? getSelectedTierData(me) : std::vector<std::vector<double>>{};
+				if (my borrowedSoundAnalysisArea && my instancePref_allTierNotes_show())
+					my borrowedSoundAnalysisArea -> tierNotesData = my instancePref_allTierNotes_show() ? getSelectedTierData(me) : std::vector<std::vector<double>>{};
 				my suppressTextCursorJump = true;
 				FunctionArea_broadcastDataChanged (me);
 				my suppressTextCursorJump = false;
