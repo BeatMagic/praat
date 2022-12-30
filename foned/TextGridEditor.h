@@ -54,12 +54,14 @@ Thing_define (TextGridEditor, FunctionEditor) {
 				// const double soundY2 = 0.65 * (1.0 + soundY);
 				// our soundAnalysisArea() -> setGlobalYRange_fraction (soundY, soundY2);
 				// our soundArea() -> setGlobalYRange_fraction (soundY2, 1.0);
-				double textGridAreaHeightP = our textGridArea() -> instancePref_textGridAreaHeight() / 100.0;
-				double soundAnalysisAreaHeightP = our textGridArea() -> instancePref_soundAnalysisAreaHeight() / 100.0;
+				double textGridAreaHeightP = our textGridArea() -> instancePref_textGridAreaHeight();
+				double soundAnalysisAreaHeightP = our textGridArea() -> instancePref_soundAnalysisAreaHeight();
+				double soundAreaHeightP = our textGridArea() -> instancePref_soundAreaHeight();
+				double total = textGridAreaHeightP + soundAnalysisAreaHeightP + soundAreaHeightP;
 				double bottomTwoAreaHP = textGridAreaHeightP + soundAnalysisAreaHeightP;
-				our textGridArea() -> setGlobalYRange_fraction (0.0, textGridAreaHeightP);
-				our soundAnalysisArea() -> setGlobalYRange_fraction (textGridAreaHeightP, bottomTwoAreaHP);
-				our soundArea() -> setGlobalYRange_fraction (bottomTwoAreaHP, 1.0);
+				our textGridArea() -> setGlobalYRange_fraction (0.0, textGridAreaHeightP / total);
+				our soundAnalysisArea() -> setGlobalYRange_fraction (textGridAreaHeightP / total, bottomTwoAreaHP / total);
+				our soundArea() -> setGlobalYRange_fraction (bottomTwoAreaHP / total, 1.0);
 			} else {
 				our soundAnalysisArea() -> setGlobalYRange_fraction (soundY, soundY);
 				our soundArea() -> setGlobalYRange_fraction (soundY, 1.0);

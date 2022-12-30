@@ -1851,9 +1851,8 @@ static void menu_cb_viewProportion (TextGridArea me, EDITOR_ARGS) {
 		SET_REAL (soundAnalysisAreaHeight,   my instancePref_soundAnalysisAreaHeight())
 		SET_REAL (textGridAreaHeight,   my instancePref_textGridAreaHeight())
 	EDITOR_DO
-		Melder_require (textGridAreaHeight + soundAreaHeight + soundAnalysisAreaHeight == 100.0,
-			U"The sum of these three values should equal 100, current: ",
-			textGridAreaHeight, U" + ", soundAreaHeight, U" + ", soundAnalysisAreaHeight, U" = ", textGridAreaHeight + soundAreaHeight + soundAnalysisAreaHeight
+		Melder_require (textGridAreaHeight > 0 && soundAreaHeight > 0 && soundAnalysisAreaHeight > 0,
+			U"The height value must be a positive number."
 		);
 		my setInstancePref_soundAreaHeight (soundAreaHeight);
 		my setInstancePref_soundAnalysisAreaHeight (soundAnalysisAreaHeight);
