@@ -398,7 +398,7 @@ static void menu_cb_openScript (Editor me, EDITOR_ARGS) {
 
 void structEditor :: v_createMenuItems_edit (EditorMenu menu) {
 	if (our data())
-		our undoButton = EditorMenu_addCommand (menu, U"Cannot undo", GuiMenu_INSENSITIVE + 'Z', menu_cb_undo);
+		our undoButton = EditorMenu_addCommand (menu, U"Cannot undo", /*GuiMenu_INSENSITIVE + 'Z'*/0, menu_cb_undo);
 }
 
 static void INFO_EDITOR__settingsReport (Editor me, EDITOR_ARGS) {
