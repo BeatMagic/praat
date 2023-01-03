@@ -2570,7 +2570,7 @@ static void on_lbuttonDown (HWND window, BOOL doubleClick, int x, int y, UINT fl
 	if (me) {
 		if (MEMBER (me, DrawingArea)) {
 			SetCapture (window);
-			_GuiWinDrawingArea_handleMouse (me, structGuiDrawingArea_MouseEvent::Phase::CLICK, x, y);
+			_GuiWinDrawingArea_handleMouse (me, doubleClick ? structGuiDrawingArea_MouseEvent::Phase::DBLCLK : structGuiDrawingArea_MouseEvent::Phase::CLICK, x, y);
 		} else FORWARD_WM_LBUTTONDOWN (window, doubleClick, x, y, flags, DefWindowProc);
 	} else FORWARD_WM_LBUTTONDOWN (window, doubleClick, x, y, flags, DefWindowProc);
 }

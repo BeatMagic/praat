@@ -471,10 +471,11 @@ typedef struct structGuiDrawingArea_ExposeEvent {
 typedef struct structGuiDrawingArea_MouseEvent {
 	GuiDrawingArea widget;
 	int x, y;
-	enum class Phase { CLICK, DRAG, DROP } phase;
-	bool isClick() const { return our phase == Phase::CLICK; }
-	bool isDrag()  const { return our phase == Phase::DRAG; }
-	bool isDrop()  const { return our phase == Phase::DROP; }
+	enum class Phase { CLICK, DRAG, DROP, DBLCLK } phase;
+	bool isClick()       const { return our phase == Phase::CLICK; }
+	bool isDrag()        const { return our phase == Phase::DRAG; }
+	bool isDrop()        const { return our phase == Phase::DROP; }
+	bool isDoubleClick() const { return our phase == Phase::DBLCLK; }
 	bool shiftKeyPressed, commandKeyPressed, optionKeyPressed;
 	bool capsKeyPressed;
 	bool isLeftBottomFunctionKeyPressed () const {

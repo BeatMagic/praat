@@ -185,6 +185,8 @@ public:
 		return FunctionEditor_defaultMouseInWideDataView (our functionEditor(), event, x_world);
 	}
 
+	virtual void v_handleMouseDBLCLK(double x_world) {}
+
 public:
 	/*
 		The data handling functions assume that editable functions

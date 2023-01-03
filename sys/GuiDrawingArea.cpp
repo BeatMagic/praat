@@ -281,6 +281,8 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 						Melder_flushError (U"Mouse drag not completely handled.");
 					break; case structGuiDrawingArea_MouseEvent::Phase::DROP:
 						Melder_flushError (U"Mouse drop not completely handled.");
+					break; case structGuiDrawingArea_MouseEvent::Phase::DBLCLK:
+						Melder_flushError (U"Mouse dblclk not completely handled.");
 					break;
 				}
 			}
@@ -463,7 +465,12 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 		}
 	}
 	- (void) mouseDown: (NSEvent *) nsEvent {
-	 	[self   mouse: nsEvent   inPhase: structGuiDrawingArea_MouseEvent::Phase::CLICK];
+		if (nsEvent.clickCount == 2) {
+			[self   mouse: nsEvent   inPhase: structGuiDrawingArea_MouseEvent::Phase::DBLCLK];
+		}
+		else {
+			[self   mouse: nsEvent   inPhase: structGuiDrawingArea_MouseEvent::Phase::CLICK];
+		}
 	}
 	- (void) mouseDragged: (NSEvent *) nsEvent {
 	 	[self   mouse: nsEvent   inPhase: structGuiDrawingArea_MouseEvent::Phase::DRAG];

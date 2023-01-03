@@ -59,6 +59,8 @@ public:
 		override;
 	bool v_mouse (GuiDrawingArea_MouseEvent event, double x_world, double localY_fraction)
 		override;
+	void v_handleMouseDBLCLK(double x_world)
+		override;
 	GuiMenuItem extractSelectedTextGridPreserveTimesButton, extractSelectedTextGridTimeFromZeroButton;
 	void v_createMenuItems_save (EditorMenu menu)
 		override;

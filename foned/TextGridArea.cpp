@@ -922,8 +922,51 @@ bool structTextGridArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 		our anchorTime = undefined;
 		our clickedLeftBoundary = 0;
 		FunctionArea_broadcastDataChanged (this);
+	} else if (event -> isDoubleClick()) {
+		IntervalTier selectedIntervalTier;
+		TextTier selectedTextTier;
+		AnyTextGridTier_identifyClass (our textGrid() -> tiers->at [our selectedTier], & selectedIntervalTier, & selectedTextTier);
+
+		if (x_world <= our startWindow() || x_world >= our endWindow())
+			return FunctionEditor_UPDATE_NEEDED;
+
+		if (selectedIntervalTier) {
+			const integer clickedIntervalNumber = IntervalTier_timeToIndex (selectedIntervalTier, x_world);
+			const bool theyClickedOutsidetheTimeDomainOfTheIntervals = ( clickedIntervalNumber == 0 );
+			if (theyClickedOutsidetheTimeDomainOfTheIntervals)
+				return FunctionEditor_UPDATE_NEEDED;
+			const TextInterval interval = selectedIntervalTier -> intervals.at [clickedIntervalNumber];
+			double dblclk_anchorTime = undefined;
+			integer dblclk_clickedLeftBoundary = undefined;
+			if (x_world > 0.5 * (interval -> xmin + interval -> xmax)) {
+				dblclk_anchorTime = interval -> xmax;
+				dblclk_clickedLeftBoundary = clickedIntervalNumber + 1;
+			} else {
+				dblclk_anchorTime = interval -> xmin;
+				dblclk_clickedLeftBoundary = clickedIntervalNumber;
+			}
+
+			const bool nearBoundary = ( isdefined (dblclk_anchorTime) &&
+				fabs (Graphics_dxWCtoMM (our graphics(), x_world - dblclk_anchorTime)) < 1.5 );
+
+			if (nearBoundary) {
+				FunctionArea_save (this, U"Remove boundary");
+				IntervalTier_removeLeftBoundary (selectedIntervalTier, dblclk_clickedLeftBoundary);
+				FunctionArea_broadcastDataChanged (this);
+			}
+		}
 	}
 	return FunctionEditor_UPDATE_NEEDED;
+}
+
+void structTextGridArea :: v_handleMouseDBLCLK(double x_world) {
+	try {
+		trace (U"enter v_handleMouseDBLCLK");
+		insertBoundaryOrPoint (this, selectedTier, x_world, x_world, false);
+		FunctionArea_broadcastDataChanged (this);
+	} catch (MelderError) {
+		Melder_throw (U"Boundary or point not inserted.");
+	}
 }
 
 

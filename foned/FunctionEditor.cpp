@@ -1414,6 +1414,15 @@ bool FunctionEditor_defaultMouseInWideDataView (FunctionEditor me, GuiDrawingAre
 			my anchorTime = undefined;
 			my hasBeenDraggedBeyondVicinityRadiusAtLeastOnce = false;
 		}
+	} else if (event -> isDoubleClick()) {
+		integer iarea = 1;
+		for (; iarea <= FunctionEditor_MAXIMUM_NUMBER_OF_FUNCTION_AREAS; iarea ++) {
+			FunctionArea area = static_cast <FunctionArea> (my functionAreas [iarea].get());
+			if (area) {
+				FunctionArea_setViewport (area);   // for Graphics_dxWCtoMM and the like
+				area -> v_handleMouseDBLCLK (mouseTime);
+			}
+		}
 	}
 	return true;
 }
@@ -1426,7 +1435,7 @@ bool structFunctionEditor :: v_mouseInWideDataView (GuiDrawingArea_MouseEvent ev
 			if (area)
 				area -> isClickAnchor = area -> isMoveWhileButtonDown = area -> y_fraction_globalIsInside (globalY_fraction);
 		}
-	if (event -> isDrag ())
+	if (event -> isDoubleClick() || event -> isDrag ())
 		for (integer iarea = 1; iarea <= FunctionEditor_MAXIMUM_NUMBER_OF_FUNCTION_AREAS; iarea ++) {
 			FunctionArea area = static_cast <FunctionArea> (our functionAreas [iarea].get());
 			if (area)
@@ -1479,7 +1488,7 @@ static void gui_drawingarea_cb_mouse (FunctionEditor me, GuiDrawingArea_MouseEve
 		my clickWasModifiedByShiftKey = event -> shiftKeyPressed;
 		my anchorIsInSelectionViewer = my isInSelectionViewer (x_pxlt);
 		my anchorIsInWideDataView = ( y_pxlt > my dataBottom_pxlt() && y_pxlt < my dataTop_pxlt() );
-	} else if (event -> isDrag()) {
+	} else if (event -> isDoubleClick() || event -> isDrag()) {
 		my anchorIsInWideDataView = ( y_pxlt > my dataBottom_pxlt() && y_pxlt < my dataTop_pxlt() );
 	}
 	if (my anchorIsInSelectionViewer) {
