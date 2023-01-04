@@ -79,6 +79,7 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 			event. commandKeyPressed = (((GdkEventButton *) e) -> state & GDK_CONTROL_MASK) != 0;
 			event. optionKeyPressed = (((GdkEventButton *) e) -> state & GDK_MOD1_MASK) != 0;
 			event. capsKeyPressed = (((GdkEventButton *) e) -> state & GDK_LOCK_MASK) != 0;
+			bool isDoubleClick = false;
 			if (previousPhase == structGuiDrawingArea_MouseEvent::Phase::CLICK) {
 				/*
 					Apparently a double-click.
@@ -88,12 +89,13 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 				try {
 					previousPhase = event. phase = structGuiDrawingArea_MouseEvent::Phase::DROP;
 					my mouseCallback (my mouseBoss, & event);
+					isDoubleClick = true;
 				} catch (MelderError) {
 					Melder_flushError (U"Mouse drop not completely handled.");
 				}
 			}
 			try {
-				previousPhase = event. phase = structGuiDrawingArea_MouseEvent::Phase::CLICK;
+				previousPhase = event. phase = isDoubleClick ? structGuiDrawingArea_MouseEvent::Phase::DBLCLK : structGuiDrawingArea_MouseEvent::Phase::CLICK;
 				my mouseCallback (my mouseBoss, & event);
 			} catch (MelderError) {
 				Melder_flushError (U"Mouse click not completely handled.");

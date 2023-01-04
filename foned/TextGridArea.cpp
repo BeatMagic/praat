@@ -954,6 +954,9 @@ bool structTextGridArea :: v_mouse (GuiDrawingArea_MouseEvent event, double x_wo
 				IntervalTier_removeLeftBoundary (selectedIntervalTier, dblclk_clickedLeftBoundary);
 				FunctionArea_broadcastDataChanged (this);
 			}
+
+			if (our borrowedSoundAnalysisArea && our instancePref_allTierNotes_show())
+				our borrowedSoundAnalysisArea -> tierNotesData = our instancePref_allTierNotes_show() ? getSelectedTierData(this) : std::vector<std::vector<double>>{};
 		}
 	}
 	return FunctionEditor_UPDATE_NEEDED;

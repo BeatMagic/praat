@@ -1421,6 +1421,7 @@ bool FunctionEditor_defaultMouseInWideDataView (FunctionEditor me, GuiDrawingAre
 			if (area) {
 				FunctionArea_setViewport (area);   // for Graphics_dxWCtoMM and the like
 				area -> v_handleMouseDBLCLK (mouseTime);
+				area -> v_updateTierNotesData ();
 			}
 		}
 	}
