@@ -56,8 +56,9 @@ static void gui_drawingarea_cb_expose (Thing /* me */, GuiDrawingArea_ExposeEven
 	theLogo.draw (theLogo.graphics.get());
 }
 
-static void gui_drawingarea_cb_mouse (Thing /* me */, GuiDrawingArea_MouseEvent /* event */) {
- 	GuiThing_hide (theLogo.form);
+static void gui_drawingarea_cb_mouse (Thing /* me */, GuiDrawingArea_MouseEvent event) {
+	if (event -> isClick())
+		GuiThing_hide (theLogo.form);
 }
 
 static void gui_cb_goAway (Thing /* boss */) {
