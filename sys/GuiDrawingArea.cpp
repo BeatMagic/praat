@@ -461,6 +461,8 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 						Melder_flushError (U"Mouse drag not completely handled.");
 					break; case structGuiDrawingArea_MouseEvent::Phase::DROP:
 						Melder_flushError (U"Mouse drop not completely handled.");
+					break; case structGuiDrawingArea_MouseEvent::Phase::DBLCLK:
+						Melder_flushError (U"Mouse dblclk not completely handled.");
 					break;
 				}
 			}
@@ -488,7 +490,10 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 		if (me && (my d_horizontalScrollBar || my d_verticalScrollBar)) {
 			if (my d_horizontalScrollBar) {
 				GuiCocoaScrollBar *cocoaScrollBar = (GuiCocoaScrollBar *) my d_horizontalScrollBar -> d_widget;
-				[cocoaScrollBar scrollBy: [nsEvent scrollingDeltaX]];
+				double deltaX = [nsEvent scrollingDeltaX];
+				[cocoaScrollBar scrollBy: deltaX];
+				if (! my d_verticalScrollBar && 0 == deltaX)
+					[cocoaScrollBar scrollBy: [nsEvent scrollingDeltaY]];
 			}
 			if (my d_verticalScrollBar) {
 				GuiCocoaScrollBar *cocoaScrollBar = (GuiCocoaScrollBar *) my d_verticalScrollBar -> d_widget;

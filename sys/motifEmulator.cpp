@@ -2626,12 +2626,21 @@ static void on_verticalWheel (HWND window, int xPos, int yPos, int zDelta, int f
 	GuiObject me = (GuiObject) GetWindowLongPtr (window, GWLP_USERDATA);
 	if (me) {
 		if (my widgetClass == xmDrawingAreaWidgetClass) {
-			if (my parent -> widgetClass == xmScrolledWindowWidgetClass)
-				on_scroll (my parent -> motiff.scrolledWindow.verticalBar, zDelta < 0 ? SB_LINEDOWN : SB_LINEUP, 0);
+			if (my parent -> widgetClass == xmScrolledWindowWidgetClass) {
+				if (GetKeyState (VK_SHIFT) < 0)
+					on_scroll (my parent -> motiff.scrolledWindow.horizontalBar, zDelta < 0 ? SB_LINERIGHT : SB_LINELEFT, 0);
+				else
+					on_scroll (my parent -> motiff.scrolledWindow.verticalBar, zDelta < 0 ? SB_LINEDOWN : SB_LINEUP, 0);
+			}
 			else
-				for (GuiObject child = my parent -> firstChild; child; child = child -> nextSibling)
-					if (child -> widgetClass == xmScrollBarWidgetClass && child -> orientation == XmVERTICAL)
-						on_scroll (child, zDelta < 0 ? SB_LINEDOWN : SB_LINEUP, 0);
+				for (GuiObject child = my parent -> firstChild; child; child = child -> nextSibling) {
+					if (child -> widgetClass == xmScrollBarWidgetClass) {
+						if (child -> orientation == XmVERTICAL)
+							on_scroll (child, zDelta < 0 ? SB_LINEDOWN : SB_LINEUP, 0);
+						else/* if (GetKeyState (VK_SHIFT) < 0)*/
+							on_scroll (child, zDelta < 0 ? SB_LINERIGHT : SB_LINELEFT, 0);
+					}
+				}
 		} else FORWARD_WM_MOUSEWHEEL (window, xPos, yPos, zDelta, fwKeys, DefWindowProc);
 	} else FORWARD_WM_MOUSEWHEEL (window, xPos, yPos, zDelta, fwKeys, DefWindowProc);
 }
@@ -2743,7 +2752,7 @@ static LRESULT CALLBACK windowProc (HWND window, UINT message, WPARAM wParam, LP
 		HANDLE_MSG (window, WM_PAINT, on_paint);
 		HANDLE_MSG (window, WM_HSCROLL, on_hscroll);
 		HANDLE_MSG (window, WM_VSCROLL, on_vscroll);
-		HANDLE_MSG (window, WM_MOUSEWHEEL, on_verticalWheel);
+		HANDLE_MSG (window, WM_MOUSEWHEEL, on_verticalWheel); // both vertical and horizontal
 		//HANDLE_MSG (window, WM_MOUSEHWHEEL, on_horizontalWheel);
 		HANDLE_MSG (window, WM_SIZE, on_size);
 		HANDLE_MSG (window, WM_KEYDOWN, on_key);
