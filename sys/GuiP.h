@@ -151,6 +151,7 @@ class GuiControlBlockValueChangedCallbacks {
 	void _GuiWinDrawingArea_handleMouse (GuiObject widget, structGuiDrawingArea_MouseEvent::Phase phase, int x, int y);
 	void _GuiWinDrawingArea_handleKey (GuiObject widget, TCHAR kar);
 	void _GuiWinDrawingArea_shellResize (GuiObject widget);
+	void _GuiWinDrawingArea_mouseWheelToZoom (GuiObject widget, integer zDelta);
 
 	/********** GuiLabel.cpp **********/
 	void _GuiWinLabel_destroy (GuiObject widget);

@@ -497,10 +497,16 @@ typedef struct structGuiDrawingArea_ResizeEvent {
 	int width, height;
 } *GuiDrawingArea_ResizeEvent;
 
+typedef struct structGuiDrawingArea_ZoomEvent {
+	GuiDrawingArea widget;
+	bool isZommIn;
+} *GuiDrawingArea_ZoomEvent;
+
 using GuiDrawingArea_ExposeCallback = MelderCallback <void, structThing /* boss */, GuiDrawingArea_ExposeEvent>;
 using GuiDrawingArea_MouseCallback  = MelderCallback <void, structThing /* boss */, GuiDrawingArea_MouseEvent >;
 using GuiDrawingArea_KeyCallback    = MelderCallback <void, structThing /* boss */, GuiDrawingArea_KeyEvent   >;
 using GuiDrawingArea_ResizeCallback = MelderCallback <void, structThing /* boss */, GuiDrawingArea_ResizeEvent>;
+using GuiDrawingArea_ZoomCallback   = MelderCallback <void, structThing /* boss */, GuiDrawingArea_ZoomEvent  >;
 
 Thing_define (GuiDrawingArea, GuiControl) {
 	GuiScrollBar d_horizontalScrollBar, d_verticalScrollBar;   // for swiping
@@ -512,6 +518,8 @@ Thing_define (GuiDrawingArea, GuiControl) {
 	Thing d_keyBoss;
 	GuiDrawingArea_ResizeCallback d_resizeCallback;
 	Thing d_resizeBoss;
+	GuiDrawingArea_ZoomCallback d_zoomCallback;
+	Thing d_zoomBoss;
 	integer numberOfGraphicses;
 	constexpr static integer MAXIMUM_NUMBER_OF_GRAPHICSES = 10;
 	Graphics graphicses [1+MAXIMUM_NUMBER_OF_GRAPHICSES];
@@ -551,6 +559,7 @@ void GuiDrawingArea_setSwipable (GuiDrawingArea me, GuiScrollBar horizontalScrol
 void GuiDrawingArea_setExposeCallback (GuiDrawingArea me, GuiDrawingArea_ExposeCallback callback, Thing boss);
 void GuiDrawingArea_setMouseCallback (GuiDrawingArea me, GuiDrawingArea_MouseCallback callback, Thing boss);
 void GuiDrawingArea_setResizeCallback (GuiDrawingArea me, GuiDrawingArea_ResizeCallback callback, Thing boss);
+void GuiDrawingArea_setZoomCallback (GuiDrawingArea me, GuiDrawingArea_ZoomCallback zoomCallback, Thing boss);
 
 /********** GuiFileSelect **********/
 

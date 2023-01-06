@@ -1537,6 +1537,12 @@ static void gui_drawingarea_cb_mouse (FunctionEditor me, GuiDrawingArea_MouseEve
 	}
 }
 
+static void gui_drawingarea_cb_mousewheeltozoom (FunctionEditor me, GuiDrawingArea_ZoomEvent event) {
+	if (! my graphics)
+		return;
+	event -> isZommIn ? do_zoomIn(me) : do_zoomOut(me);
+}
+
 void structFunctionEditor :: v_createChildren () {
 	int x = BUTTON_X;
 
@@ -1601,6 +1607,7 @@ void structFunctionEditor :: v_createChildren () {
 		nullptr, gui_drawingarea_cb_resize, this, 0
 	);
 	GuiDrawingArea_setSwipable (our drawingArea, our scrollBar, nullptr);
+	GuiDrawingArea_setZoomCallback (our drawingArea, gui_drawingarea_cb_mousewheeltozoom, this);
 }
 
 void structFunctionEditor :: v1_dataChanged (Editor sender) {

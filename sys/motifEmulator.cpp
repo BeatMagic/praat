@@ -2632,7 +2632,8 @@ static void on_verticalWheel (HWND window, int xPos, int yPos, int zDelta, int f
 				else
 					on_scroll (my parent -> motiff.scrolledWindow.verticalBar, zDelta < 0 ? SB_LINEDOWN : SB_LINEUP, 0);
 			}
-			else
+			else {
+				// scroll
 				for (GuiObject child = my parent -> firstChild; child; child = child -> nextSibling) {
 					if (child -> widgetClass == xmScrollBarWidgetClass) {
 						if (child -> orientation == XmVERTICAL)
@@ -2641,6 +2642,16 @@ static void on_verticalWheel (HWND window, int xPos, int yPos, int zDelta, int f
 							on_scroll (child, zDelta < 0 ? SB_LINERIGHT : SB_LINELEFT, 0);
 					}
 				}
+
+				// zoom in/out
+				if (MEMBER (me, DrawingArea) && GetKeyState (VK_CONTROL) < 0)
+					_GuiWinDrawingArea_mouseWheelToZoom (me, zDelta);
+				// also works:
+				/*int modifiers = 0;
+				if (GetKeyState (VK_CONTROL) < 0)
+					modifiers |= _motif_COMMAND_MASK;
+				win_shell_processKeyboardEquivalent (my shell, zDelta < 0 ? 'I' : 'O', modifiers);*/
+			}
 		} else FORWARD_WM_MOUSEWHEEL (window, xPos, yPos, zDelta, fwKeys, DefWindowProc);
 	} else FORWARD_WM_MOUSEWHEEL (window, xPos, yPos, zDelta, fwKeys, DefWindowProc);
 }

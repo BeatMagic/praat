@@ -323,6 +323,17 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 			}
 		}
 	}
+	void _GuiWinDrawingArea_mouseWheelToZoom (GuiObject widget, integer zDelta) {
+		iam_drawingarea;
+		if (my d_zoomCallback) {
+			structGuiDrawingArea_ZoomEvent event { me, zDelta < 0 };
+			try {
+				my d_zoomCallback (my d_zoomBoss, & event);
+			} catch (MelderError) {
+				Melder_flushError (U"MouseWheelToZoom not completely handled.");
+			}
+		}
+	}
 #elif cocoa
 #pragma mark - COCOA CALLBACKS (WITH QUARTZ)
 	@implementation GuiCocoaDrawingArea {
@@ -487,17 +498,28 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 	}
 	- (void) scrollWheel: (NSEvent *) nsEvent {
 		GuiDrawingArea me = (GuiDrawingArea) self -> userData;
-		if (me && (my d_horizontalScrollBar || my d_verticalScrollBar)) {
-			if (my d_horizontalScrollBar) {
+		if (me && (my d_horizontalScrollBar || my d_verticalScrollBar || my d_zoomCallback)) {
+			NSUInteger modifiers = [nsEvent modifierFlags];
+			bool ctrlKeyPressed = modifiers & NSControlKeyMask;
+			double deltaX = [nsEvent scrollingDeltaX];
+			double deltaY = [nsEvent scrollingDeltaY];
+			if (! ctrlKeyPressed && my d_horizontalScrollBar) {
 				GuiCocoaScrollBar *cocoaScrollBar = (GuiCocoaScrollBar *) my d_horizontalScrollBar -> d_widget;
-				double deltaX = [nsEvent scrollingDeltaX];
 				[cocoaScrollBar scrollBy: deltaX];
 				if (! my d_verticalScrollBar && 0 == deltaX)
-					[cocoaScrollBar scrollBy: [nsEvent scrollingDeltaY]];
+					[cocoaScrollBar scrollBy: deltaY];
 			}
-			if (my d_verticalScrollBar) {
+			if (! ctrlKeyPressed && my d_verticalScrollBar) {
 				GuiCocoaScrollBar *cocoaScrollBar = (GuiCocoaScrollBar *) my d_verticalScrollBar -> d_widget;
-				[cocoaScrollBar scrollBy: [nsEvent scrollingDeltaY]];
+				[cocoaScrollBar scrollBy: deltaY];
+			}
+			if (ctrlKeyPressed && my d_zoomCallback) {
+				structGuiDrawingArea_ZoomEvent event = { me, deltaY < 0};
+				try {
+					my d_zoomCallback (my d_zoomBoss, & event);
+				} catch (MelderError) {
+					Melder_flushError (U"MouseWheelToZoom not completely handled.");
+				}
 			}
 		} else {
 			[super scrollWheel: nsEvent];
@@ -737,6 +759,11 @@ void GuiDrawingArea_setMouseCallback (GuiDrawingArea me, GuiDrawingArea_MouseCal
 void GuiDrawingArea_setResizeCallback (GuiDrawingArea me, GuiDrawingArea_ResizeCallback callback, Thing boss) {
 	my d_resizeCallback = callback;
 	my d_resizeBoss = boss;
+}
+
+void GuiDrawingArea_setZoomCallback (GuiDrawingArea me, GuiDrawingArea_ZoomCallback zoomCallback, Thing boss) {
+	my d_zoomCallback = zoomCallback;
+	my d_zoomBoss = boss;
 }
 
 /* End of file GuiDrawingArea.cpp */
