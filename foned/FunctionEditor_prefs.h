@@ -23,6 +23,7 @@ Prefs_begin (FunctionEditor)
 	ClassPrefs_addBool       (FunctionEditor, synchronizedZoomAndScroll,  1, true)
 	InstancePrefs_addBool    (FunctionEditor, showSelectionViewer, 1, false)
 	InstancePrefs_addDouble  (FunctionEditor, arrowScrollStep,     1, U"0.05")
+	InstancePrefs_addDouble  (FunctionEditor, scrollFactor,        1, U"1.00")
 
 Prefs_end (FunctionEditor)
 

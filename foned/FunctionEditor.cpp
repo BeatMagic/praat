@@ -774,12 +774,22 @@ static void QUERY_EDITOR_FOR_REAL__getLengthOfVisiblePart (FunctionEditor me, ED
 
 static void menu_cb_zoomAndScrollSettings (FunctionEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Zoom and scroll settings", nullptr)
-		BOOLEAN (synchronizeZoomAndScroll, U"Synchronize zoom and scroll", my default_synchronizedZoomAndScroll())
+		BOOLEAN  (synchronizeZoomAndScroll, U"Synchronize zoom and scroll", my default_synchronizedZoomAndScroll())
+		POSITIVE (scrollFactor, U"Scroll factor",  my default_scrollFactor())
 	EDITOR_OK
 		SET_BOOLEAN (synchronizeZoomAndScroll, my classPref_synchronizedZoomAndScroll())
+		SET_REAL    (scrollFactor,             my instancePref_scrollFactor())
 	EDITOR_DO
 		const bool oldSynchronizedZoomAndScroll = my classPref_synchronizedZoomAndScroll();
 		my setClassPref_synchronizedZoomAndScroll (synchronizeZoomAndScroll);
+		my setInstancePref_scrollFactor (scrollFactor);
+		if (my scrollBar)
+			#if motif
+			my scrollBar -> d_widget -> scrollFactor = scrollFactor;
+			#elif cocoa
+			[my scrollBar -> d_widget setScrollFactor: scrollFactor];
+			#elif gtk
+			#endif
 		if (! oldSynchronizedZoomAndScroll && my classPref_synchronizedZoomAndScroll())
 			updateGroup (me);
 		FunctionEditor_redraw (me);
@@ -1569,6 +1579,12 @@ void structFunctionEditor :: v_createChildren () {
 		x += BUTTON_WIDTH + BUTTON_SPACING, -80 - BUTTON_SPACING, -4 - Gui_PUSHBUTTON_HEIGHT, 0,
 		1, maximumScrollBarValue, 1, maximumScrollBarValue - 1, 1, 1,
 		gui_cb_scroll, this, GuiScrollBar_HORIZONTAL);
+	#if motif
+	our scrollBar -> d_widget -> scrollFactor = instancePref_scrollFactor();
+	#elif cocoa
+	[our scrollBar -> d_widget setScrollFactor: instancePref_scrollFactor()];
+	#elif gtk
+	#endif
 
 	/***** Create Group button. *****/
 

@@ -67,6 +67,7 @@ Thing_implement (GuiScrollBar, GuiControl, 0);
 		double m_sliderSize;
 		double m_increment;
 		double m_pageIncrement;
+		double m_scrollFactor;
 	}
 	- (void) dealloc {   // override
 		GuiScrollBar me = self -> d_userData;
@@ -80,6 +81,10 @@ Thing_implement (GuiScrollBar, GuiControl, 0);
 	- (void) setUserData: (GuiThing) userData {
 		Melder_assert (userData == nullptr || Thing_isa (userData, classGuiScrollBar));
 		self -> d_userData = static_cast <GuiScrollBar> (userData);
+	}
+	- (void) setScrollFactor: (double) scrollFactor {
+		Melder_assert (isdefined (scrollFactor));
+		self -> m_scrollFactor = scrollFactor;
 	}
 	- (void) setMinimum: (double)minimum maximum:(double)maximum value:(double)value sliderSize:(double)sliderSize increment:(double)increment pageIncrement:(double)pageIncrement {
 		Melder_assert (isdefined (minimum));
@@ -115,7 +120,7 @@ Thing_implement (GuiScrollBar, GuiControl, 0);
 		trace (U"step ", step);
 		if (step == 0)
 			return;
-		self -> m_value -= 0.3 * step * self -> m_increment;
+		self -> m_value -= 0.3 * step * self -> m_increment * self -> m_scrollFactor;
 		if (self -> m_value < self -> m_minimum)
 			self -> m_value = self -> m_minimum;
 		if (self -> m_value > self -> m_maximum - self -> m_sliderSize)
@@ -234,6 +239,7 @@ GuiScrollBar GuiScrollBar_create (GuiForm parent, int left, int right, int top, 
 		my v_positionInForm (my d_widget, left, right, top, bottom, parent);
 		[scroller setUserData: me.get()];
 		[scroller setEnabled: YES];
+		[scroller setScrollFactor: 1.0];
 		[scroller   setMinimum: minimum   maximum: maximum   value: value   sliderSize: sliderSize   increment: increment   pageIncrement: pageIncrement];
         //[scroller setScrollerStyle: NSScrollerStyleOverlay];
         [scroller setTarget: scroller];

@@ -2154,12 +2154,13 @@ static GuiObject _motif_getNextTextWidget (GuiObject shell, GuiObject text, bool
 static void on_scroll (GuiObject me, UINT part, int pos) {
 	if (my maximum == my minimum)
 		return;
+	double scrollFactor = my scrollFactor == 0.0 || isundef(my scrollFactor) ? 1.0 : my scrollFactor;
 	switch (part) {
 		case SB_LINEUP:
-			my value -= my increment;
+			my value -= (scrollFactor * my increment);
 			break;
 		case SB_LINEDOWN:
-			my value += my increment;
+			my value += (scrollFactor * my increment);
 			break;
 		case SB_PAGEUP:
 			my value -= my pageIncrement;
