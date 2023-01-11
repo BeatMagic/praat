@@ -776,13 +776,19 @@ static void menu_cb_zoomAndScrollSettings (FunctionEditor me, EDITOR_ARGS) {
 	EDITOR_FORM (U"Zoom and scroll settings", nullptr)
 		BOOLEAN  (synchronizeZoomAndScroll, U"Synchronize zoom and scroll", my default_synchronizedZoomAndScroll())
 		POSITIVE (scrollFactor, U"Scroll factor",  my default_scrollFactor())
+		POSITIVE (zoomFactor, U"Zoom factor",  my default_zoomFactor())
 	EDITOR_OK
 		SET_BOOLEAN (synchronizeZoomAndScroll, my classPref_synchronizedZoomAndScroll())
 		SET_REAL    (scrollFactor,             my instancePref_scrollFactor())
+		SET_REAL    (zoomFactor,             my instancePref_zoomFactor())
 	EDITOR_DO
+		Melder_require (zoomFactor >= 1.0,
+			U"The zoom factor must be no less than 1.0."
+		);
 		const bool oldSynchronizedZoomAndScroll = my classPref_synchronizedZoomAndScroll();
 		my setClassPref_synchronizedZoomAndScroll (synchronizeZoomAndScroll);
 		my setInstancePref_scrollFactor (scrollFactor);
+		my setInstancePref_zoomFactor (zoomFactor);
 		if (my scrollBar)
 			#if motif
 			my scrollBar -> d_widget -> scrollFactor = scrollFactor;
@@ -836,7 +842,7 @@ static void gui_button_cb_showAll (FunctionEditor me, GuiButtonEvent /* event */
 	do_showAll (me);
 }
 static void do_zoomIn (FunctionEditor me) {
-	const double shift = (my endWindow - my startWindow) / 4.0;
+	const double shift = (my endWindow - my startWindow) / (4.0 * my instancePref_zoomFactor());
 	my startWindow += shift;
 	my endWindow -= shift;
 	my v_windowChanged ();
@@ -852,7 +858,7 @@ static void gui_button_cb_zoomIn (FunctionEditor me, GuiButtonEvent /* event */)
 	do_zoomIn (me);
 }
 static void do_zoomOut (FunctionEditor me) {
-	const double shift = (my endWindow - my startWindow) / 2.0;
+	const double shift = (my endWindow - my startWindow) / (4.0 * my instancePref_zoomFactor() - 2.0);
 	//MelderAudio_stopPlaying (MelderAudio_IMPLICIT);   // quickly, before window changes; ppgb 2022-06-25: why was this here?
 	my startWindow -= shift;
 	if (my startWindow < my tmin + 1e-12)

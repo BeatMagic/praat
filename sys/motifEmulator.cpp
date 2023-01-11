@@ -2634,9 +2634,10 @@ static void on_verticalWheel (HWND window, int xPos, int yPos, int zDelta, int f
 					on_scroll (my parent -> motiff.scrolledWindow.verticalBar, zDelta < 0 ? SB_LINEDOWN : SB_LINEUP, 0);
 			}
 			else {
+				bool ctrlKeyPressed = GetKeyState (VK_CONTROL) < 0;
 				// scroll
 				for (GuiObject child = my parent -> firstChild; child; child = child -> nextSibling) {
-					if (child -> widgetClass == xmScrollBarWidgetClass) {
+					if (child -> widgetClass == xmScrollBarWidgetClass && ! ctrlKeyPressed) {
 						if (child -> orientation == XmVERTICAL)
 							on_scroll (child, zDelta < 0 ? SB_LINEDOWN : SB_LINEUP, 0);
 						else/* if (GetKeyState (VK_SHIFT) < 0)*/
@@ -2645,7 +2646,7 @@ static void on_verticalWheel (HWND window, int xPos, int yPos, int zDelta, int f
 				}
 
 				// zoom in/out
-				if (MEMBER (me, DrawingArea) && GetKeyState (VK_CONTROL) < 0)
+				if (MEMBER (me, DrawingArea) && ctrlKeyPressed)
 					_GuiWinDrawingArea_mouseWheelToZoom (me, zDelta);
 				// also works:
 				/*int modifiers = 0;
