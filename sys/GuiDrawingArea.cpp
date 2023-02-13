@@ -326,7 +326,7 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 	void _GuiWinDrawingArea_mouseWheelToZoom (GuiObject widget, integer zDelta) {
 		iam_drawingarea;
 		if (my d_zoomCallback) {
-			structGuiDrawingArea_ZoomEvent event { me, zDelta < 0 };
+			structGuiDrawingArea_ZoomEvent event { me, zDelta >= 0 };
 			try {
 				my d_zoomCallback (my d_zoomBoss, & event);
 			} catch (MelderError) {
@@ -514,7 +514,7 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 				[cocoaScrollBar scrollBy: deltaY];
 			}
 			if (ctrlKeyPressed && my d_zoomCallback) {
-				structGuiDrawingArea_ZoomEvent event = { me, deltaY < 0};
+				structGuiDrawingArea_ZoomEvent event = { me, deltaY >= 0};
 				try {
 					my d_zoomCallback (my d_zoomBoss, & event);
 				} catch (MelderError) {

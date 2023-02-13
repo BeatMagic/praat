@@ -782,9 +782,9 @@ static void menu_cb_zoomAndScrollSettings (FunctionEditor me, EDITOR_ARGS) {
 		SET_REAL    (scrollFactor,             my instancePref_scrollFactor())
 		SET_REAL    (zoomFactor,             my instancePref_zoomFactor())
 	EDITOR_DO
-		Melder_require (zoomFactor >= 1.0,
-			U"The zoom factor must be no less than 1.0."
-		);
+		// Melder_require (zoomFactor >= 1.0,
+		// 	U"The zoom factor must be no less than 1.0."
+		// );
 		const bool oldSynchronizedZoomAndScroll = my classPref_synchronizedZoomAndScroll();
 		my setClassPref_synchronizedZoomAndScroll (synchronizeZoomAndScroll);
 		my setInstancePref_scrollFactor (scrollFactor);
