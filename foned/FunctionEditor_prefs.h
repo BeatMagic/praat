@@ -25,6 +25,8 @@ Prefs_begin (FunctionEditor)
 	InstancePrefs_addDouble  (FunctionEditor, arrowScrollStep,     1, U"0.05")
 	InstancePrefs_addDouble  (FunctionEditor, scrollFactor,        1, U"1.00")
 	InstancePrefs_addDouble  (FunctionEditor, zoomFactor,          1, U"1.00")
+	InstancePrefs_addBool    (FunctionEditor, reverseScrollDirection,  1, false)
+	InstancePrefs_addBool    (FunctionEditor, reverseZoomDirection,  1, false)
 
 Prefs_end (FunctionEditor)
 

@@ -68,6 +68,7 @@ Thing_implement (GuiScrollBar, GuiControl, 0);
 		double m_increment;
 		double m_pageIncrement;
 		double m_scrollFactor;
+		bool   m_reverseScrollDirection;
 	}
 	- (void) dealloc {   // override
 		GuiScrollBar me = self -> d_userData;
@@ -85,6 +86,9 @@ Thing_implement (GuiScrollBar, GuiControl, 0);
 	- (void) setScrollFactor: (double) scrollFactor {
 		Melder_assert (isdefined (scrollFactor));
 		self -> m_scrollFactor = scrollFactor;
+	}
+	- (void) setReverseScrollDirection: (bool) reverseScrollDirection {
+		self -> m_reverseScrollDirection = reverseScrollDirection;
 	}
 	- (void) setMinimum: (double)minimum maximum:(double)maximum value:(double)value sliderSize:(double)sliderSize increment:(double)increment pageIncrement:(double)pageIncrement {
 		Melder_assert (isdefined (minimum));
@@ -120,6 +124,8 @@ Thing_implement (GuiScrollBar, GuiControl, 0);
 		trace (U"step ", step);
 		if (step == 0)
 			return;
+		if (self -> m_reverseScrollDirection)
+			step = -step;
 		self -> m_value -= 0.3 * step * self -> m_increment * self -> m_scrollFactor;
 		if (self -> m_value < self -> m_minimum)
 			self -> m_value = self -> m_minimum;
@@ -240,6 +246,7 @@ GuiScrollBar GuiScrollBar_create (GuiForm parent, int left, int right, int top, 
 		[scroller setUserData: me.get()];
 		[scroller setEnabled: YES];
 		[scroller setScrollFactor: 1.0];
+		[scroller setReverseScrollDirection: false];
 		[scroller   setMinimum: minimum   maximum: maximum   value: value   sliderSize: sliderSize   increment: increment   pageIncrement: pageIncrement];
         //[scroller setScrollerStyle: NSScrollerStyleOverlay];
         [scroller setTarget: scroller];

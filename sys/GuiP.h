@@ -104,6 +104,7 @@ class GuiControlBlockValueChangedCallbacks {
 		GuiObject subMenuId, popUpButton;   /* For cascade buttons and their menus. */
 		integer increment, pageIncrement, sliderSize;   /* For scroll bars. */
 		double scrollFactor; /* For scroll bars. */
+		bool reverseScrollDirection; /* For (h)scroll bars */
 		integer minimum, maximum, value;   /* For scales and scroll bars. */
 
 		XtCallbackProc activateCallback, destroyCallback;

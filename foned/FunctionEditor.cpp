@@ -777,10 +777,14 @@ static void menu_cb_zoomAndScrollSettings (FunctionEditor me, EDITOR_ARGS) {
 		BOOLEAN  (synchronizeZoomAndScroll, U"Synchronize zoom and scroll", my default_synchronizedZoomAndScroll())
 		POSITIVE (scrollFactor, U"Scroll factor",  my default_scrollFactor())
 		POSITIVE (zoomFactor, U"Zoom factor",  my default_zoomFactor())
+		BOOLEAN  (reverseScrollDirection, U"Reverse scroll direction", my default_reverseScrollDirection())
+		BOOLEAN  (reverseZoomDirection, U"Reverse zoom direction", my default_reverseZoomDirection())
 	EDITOR_OK
 		SET_BOOLEAN (synchronizeZoomAndScroll, my classPref_synchronizedZoomAndScroll())
 		SET_REAL    (scrollFactor,             my instancePref_scrollFactor())
 		SET_REAL    (zoomFactor,             my instancePref_zoomFactor())
+		SET_BOOLEAN (reverseScrollDirection, my instancePref_reverseScrollDirection())
+		SET_BOOLEAN (reverseZoomDirection, my instancePref_reverseZoomDirection())
 	EDITOR_DO
 		// Melder_require (zoomFactor >= 1.0,
 		// 	U"The zoom factor must be no less than 1.0."
@@ -789,13 +793,18 @@ static void menu_cb_zoomAndScrollSettings (FunctionEditor me, EDITOR_ARGS) {
 		my setClassPref_synchronizedZoomAndScroll (synchronizeZoomAndScroll);
 		my setInstancePref_scrollFactor (scrollFactor);
 		my setInstancePref_zoomFactor (zoomFactor);
-		if (my scrollBar)
+		my setInstancePref_reverseScrollDirection (reverseScrollDirection);
+		my setInstancePref_reverseZoomDirection (reverseZoomDirection);
+		if (my scrollBar) {
 			#if motif
 			my scrollBar -> d_widget -> scrollFactor = scrollFactor;
+			my scrollBar -> d_widget -> reverseScrollDirection = reverseScrollDirection;
 			#elif cocoa
 			[my scrollBar -> d_widget setScrollFactor: scrollFactor];
+			[my scrollBar -> d_widget setReverseScrollDirection: reverseScrollDirection];
 			#elif gtk
 			#endif
+		}
 		if (! oldSynchronizedZoomAndScroll && my classPref_synchronizedZoomAndScroll())
 			updateGroup (me);
 		FunctionEditor_redraw (me);
@@ -1556,7 +1565,8 @@ static void gui_drawingarea_cb_mouse (FunctionEditor me, GuiDrawingArea_MouseEve
 static void gui_drawingarea_cb_mousewheeltozoom (FunctionEditor me, GuiDrawingArea_ZoomEvent event) {
 	if (! my graphics)
 		return;
-	event -> isZommIn ? do_zoomIn(me) : do_zoomOut(me);
+	bool reverse = my instancePref_reverseZoomDirection();
+	event -> isZommIn ? (reverse ? do_zoomOut(me) : do_zoomIn(me)) : (reverse ? do_zoomIn(me) : do_zoomOut(me));
 }
 
 void structFunctionEditor :: v_createChildren () {
@@ -1587,8 +1597,10 @@ void structFunctionEditor :: v_createChildren () {
 		gui_cb_scroll, this, GuiScrollBar_HORIZONTAL);
 	#if motif
 	our scrollBar -> d_widget -> scrollFactor = instancePref_scrollFactor();
+	our scrollBar -> d_widget -> reverseScrollDirection = instancePref_reverseScrollDirection();
 	#elif cocoa
 	[our scrollBar -> d_widget setScrollFactor: instancePref_scrollFactor()];
+	[our scrollBar -> d_widget setReverseScrollDirection: instancePref_reverseScrollDirection()];
 	#elif gtk
 	#endif
 

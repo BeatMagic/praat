@@ -2638,10 +2638,18 @@ static void on_verticalWheel (HWND window, int xPos, int yPos, int zDelta, int f
 				// scroll
 				for (GuiObject child = my parent -> firstChild; child; child = child -> nextSibling) {
 					if (child -> widgetClass == xmScrollBarWidgetClass && ! ctrlKeyPressed) {
-						if (child -> orientation == XmVERTICAL)
-							on_scroll (child, zDelta < 0 ? SB_LINEDOWN : SB_LINEUP, 0);
-						else/* if (GetKeyState (VK_SHIFT) < 0)*/
-							on_scroll (child, zDelta < 0 ? SB_LINERIGHT : SB_LINELEFT, 0);
+						if (child -> orientation == XmVERTICAL) {
+							UINT direction = zDelta < 0 ? SB_LINEDOWN : SB_LINEUP;
+							if (child -> reverseScrollDirection)
+								direction = zDelta < 0 ? SB_LINEUP : SB_LINEDOWN;
+							on_scroll (child, direction, 0);
+						}
+						else/* if (GetKeyState (VK_SHIFT) < 0)*/ {
+							UINT direction = zDelta < 0 ? SB_LINERIGHT : SB_LINELEFT;
+							if (child -> reverseScrollDirection)
+								direction = zDelta < 0 ? SB_LINELEFT : SB_LINERIGHT;
+							on_scroll (child, direction, 0);
+						}
 					}
 				}
 
