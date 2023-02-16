@@ -132,6 +132,7 @@ constexpr bool theCommandKeyIsToTheLeftOfTheOptionKey =
 	@interface GuiCocoaScrollBar : NSScroller <GuiCocoaAny>
 		- (void) scrollBy: (double) step;
 		- (void) magnifyBy: (double) step;
+		- (bool) getReverseScrollDirection;
 	@end
 	@interface GuiCocoaScrolledWindow : NSScrollView <GuiCocoaAny> @end
 	@interface GuiCocoaShell : NSWindow <GuiCocoaAny> @end
@@ -499,7 +500,7 @@ typedef struct structGuiDrawingArea_ResizeEvent {
 
 typedef struct structGuiDrawingArea_ZoomEvent {
 	GuiDrawingArea widget;
-	bool isZommIn;
+	bool isZoomIn;
 } *GuiDrawingArea_ZoomEvent;
 
 using GuiDrawingArea_ExposeCallback = MelderCallback <void, structThing /* boss */, GuiDrawingArea_ExposeEvent>;

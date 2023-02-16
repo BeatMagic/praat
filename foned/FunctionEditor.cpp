@@ -1565,13 +1565,13 @@ static void gui_drawingarea_cb_mousewheeltozoom (FunctionEditor me, GuiDrawingAr
 
 	double step = 0.005 * my instancePref_zoomFactor();
 	Melder_clipRight(&step, 0.656);
-	if (!event -> isZommIn)
+	if (!event -> isZoomIn)
 		step = -step;
 	double visiblePart = my endWindow - my startWindow;
 	double shift = visiblePart * pow(-step, 3)/*(exp (- step) - 1.0)*/;
-	if (event -> isZommIn && visiblePart <= 0.000001) // zoomIn limit
+	bool isZoomIn = (event -> isZoomIn && !my instancePref_reverseZoomDirection()) || (!event -> isZoomIn && my instancePref_reverseZoomDirection());
+	if (isZoomIn && visiblePart <= 0.000001) // zoomIn limit
 		return;
-
 	if (my instancePref_reverseZoomDirection())
 		shift = -shift;
 

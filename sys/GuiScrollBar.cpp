@@ -87,6 +87,9 @@ Thing_implement (GuiScrollBar, GuiControl, 0);
 		Melder_assert (isdefined (scrollFactor));
 		self -> m_scrollFactor = scrollFactor;
 	}
+	- (bool) getReverseScrollDirection {
+		return self -> m_reverseScrollDirection;
+	}
 	- (void) setReverseScrollDirection: (bool) reverseScrollDirection {
 		self -> m_reverseScrollDirection = reverseScrollDirection;
 	}
@@ -124,8 +127,6 @@ Thing_implement (GuiScrollBar, GuiControl, 0);
 		trace (U"step ", step);
 		if (step == 0)
 			return;
-		if (self -> m_reverseScrollDirection)
-			step = -step;
 		self -> m_value -= 0.3 * step * self -> m_increment * self -> m_scrollFactor;
 		if (self -> m_value < self -> m_minimum)
 			self -> m_value = self -> m_minimum;

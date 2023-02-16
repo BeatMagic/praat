@@ -506,15 +506,24 @@ Thing_implement (GuiDrawingArea, GuiControl, 0);
 			if (! ctrlKeyPressed && my d_horizontalScrollBar) {
 				GuiCocoaScrollBar *cocoaScrollBar = (GuiCocoaScrollBar *) my d_horizontalScrollBar -> d_widget;
 				[cocoaScrollBar scrollBy: deltaX];
-				if (! my d_verticalScrollBar && 0 == deltaX)
-					[cocoaScrollBar scrollBy: deltaY];
+				if (! my d_verticalScrollBar && 0 == deltaX) {
+					double mouseWheelDeltaYScrolling = -deltaY;
+					if (![nsEvent isDirectionInvertedFromDevice])
+						mouseWheelDeltaYScrolling *= -1;
+					if ([cocoaScrollBar getReverseScrollDirection])
+						mouseWheelDeltaYScrolling *= -1;
+					[cocoaScrollBar scrollBy: mouseWheelDeltaYScrolling];
+				}
 			}
 			if (! ctrlKeyPressed && my d_verticalScrollBar) {
 				GuiCocoaScrollBar *cocoaScrollBar = (GuiCocoaScrollBar *) my d_verticalScrollBar -> d_widget;
 				[cocoaScrollBar scrollBy: deltaY];
 			}
 			if (ctrlKeyPressed && my d_zoomCallback) {
-				structGuiDrawingArea_ZoomEvent event = { me, deltaY >= 0};
+				bool zoomIn = deltaY < 0;
+				if (![nsEvent isDirectionInvertedFromDevice])
+					zoomIn = !zoomIn;
+				structGuiDrawingArea_ZoomEvent event = { me, zoomIn};
 				try {
 					my d_zoomCallback (my d_zoomBoss, & event);
 				} catch (MelderError) {
