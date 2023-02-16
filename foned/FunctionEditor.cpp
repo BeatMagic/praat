@@ -786,9 +786,6 @@ static void menu_cb_zoomAndScrollSettings (FunctionEditor me, EDITOR_ARGS) {
 		SET_BOOLEAN (reverseScrollDirection, my instancePref_reverseScrollDirection())
 		SET_BOOLEAN (reverseZoomDirection, my instancePref_reverseZoomDirection())
 	EDITOR_DO
-		// Melder_require (zoomFactor >= 1.0,
-		// 	U"The zoom factor must be no less than 1.0."
-		// );
 		const bool oldSynchronizedZoomAndScroll = my classPref_synchronizedZoomAndScroll();
 		my setClassPref_synchronizedZoomAndScroll (synchronizeZoomAndScroll);
 		my setInstancePref_scrollFactor (scrollFactor);
@@ -851,7 +848,7 @@ static void gui_button_cb_showAll (FunctionEditor me, GuiButtonEvent /* event */
 	do_showAll (me);
 }
 static void do_zoomIn (FunctionEditor me) {
-	const double shift = (my endWindow - my startWindow) / (4.0 * my instancePref_zoomFactor());
+	const double shift = (my endWindow - my startWindow) / 4.0;
 	my startWindow += shift;
 	my endWindow -= shift;
 	my v_windowChanged ();
@@ -867,7 +864,7 @@ static void gui_button_cb_zoomIn (FunctionEditor me, GuiButtonEvent /* event */)
 	do_zoomIn (me);
 }
 static void do_zoomOut (FunctionEditor me) {
-	const double shift = (my endWindow - my startWindow) / (4.0 * my instancePref_zoomFactor() - 2.0);
+	const double shift = (my endWindow - my startWindow) / 2.0;
 	//MelderAudio_stopPlaying (MelderAudio_IMPLICIT);   // quickly, before window changes; ppgb 2022-06-25: why was this here?
 	my startWindow -= shift;
 	if (my startWindow < my tmin + 1e-12)
@@ -1565,8 +1562,42 @@ static void gui_drawingarea_cb_mouse (FunctionEditor me, GuiDrawingArea_MouseEve
 static void gui_drawingarea_cb_mousewheeltozoom (FunctionEditor me, GuiDrawingArea_ZoomEvent event) {
 	if (! my graphics)
 		return;
-	bool reverse = my instancePref_reverseZoomDirection();
-	event -> isZommIn ? (reverse ? do_zoomOut(me) : do_zoomIn(me)) : (reverse ? do_zoomIn(me) : do_zoomOut(me));
+
+	double step = 0.005 * my instancePref_zoomFactor();
+	Melder_clipRight(&step, 0.656);
+	if (!event -> isZommIn)
+		step = -step;
+	double visiblePart = my endWindow - my startWindow;
+	double shift = visiblePart * pow(-step, 3)/*(exp (- step) - 1.0)*/;
+	if (event -> isZommIn && visiblePart <= 0.000001) // zoomIn limit
+		return;
+
+	if (my instancePref_reverseZoomDirection())
+		shift = -shift;
+
+	if (shift > 0) { // sliderSize += shift, sliderSize increases, zoom out
+		my startWindow -= shift;
+		if (my startWindow < my tmin + 1e-12)
+			my startWindow = my tmin;
+		my endWindow += shift;
+		if (my endWindow > my tmax - 1e-12)
+			my endWindow = my tmax;
+	}
+	else { // zoom in
+		shift = -shift;
+		my startWindow += shift;
+		my endWindow -= shift;
+	}
+
+	// same as the do_zoomIn()
+	my v_windowChanged ();
+	Melder_assert (isdefined (my startSelection));   // precondition of v_updateText()
+	my v_updateText ();
+	my v_updateTierNotesData ();
+	updateScrollBar (me);
+	FunctionEditor_redraw (me);
+	if (my classPref_synchronizedZoomAndScroll())
+		updateGroup (me);
 }
 
 void structFunctionEditor :: v_createChildren () {
