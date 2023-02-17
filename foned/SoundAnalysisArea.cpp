@@ -1894,7 +1894,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 
 	my v_draw_analysis_formants ();
 
-	if (my instancePref_pitchGrid_show()) {
+	if (my instancePref_pitchGrid_show() && my d_pitch) {
 		Graphics_setWindow (my graphics(), my startWindow(), my endWindow(), pitchViewFrom_hidden_semitones440, pitchViewTo_hidden_semitones440);
 		Graphics_setLineType (my graphics(), Graphics_DOTTED);
 		Graphics_setLineWidth (my graphics(), 1.0);
@@ -2089,7 +2089,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 			Graphics_line (our graphics, our endSelection, our p_spectrogram_viewFrom, our endSelection, our p_spectrogram_viewTo);*/
 		Graphics_setLineType (my graphics(), Graphics_DRAWN);
 	}
-	if (my instancePref_pitchGrid_show()) {
+	if (my instancePref_pitchGrid_show() && my d_pitch) {
 		/*
 			Draw pitchGrid's vertical scales. Don't forget setWindow().
 		*/
