@@ -227,6 +227,78 @@ void Melder_relativePathToFile (conststring32 path, MelderFile file) {
 	#endif
 }
 
+void Melder_relativePathToFolder (conststring32 path, MelderDir folder) {
+	/*
+		This handles complete, partial and home-relative path names,
+		and translates slashes to native directory separators.
+
+		Used if we do not know for sure that we have a complete path name,
+		i.e. if the user determined the name (scripting).
+	*/
+	#if defined (UNIX)
+		if (const bool pathIsHomeRelative = ( path [0] == U'~' && (path [1] == U'/' || path [1] == U'\0') )) {
+			Melder_sprint (folder -> path,kMelder_MAXPATH+1, Melder_peek8to32 (getenv ("HOME")), & path [1]);
+		} else if (const bool pathIsAbsolute = (
+				path [0] == U'/'   // path is on local disk
+				||
+				str32str (path, U"://")   // path is on a service through a URL; is this needed and/or safe?
+			))
+		{
+			Melder_sprint (folder -> path,kMelder_MAXPATH+1, path);
+		} else {
+			/*
+				Remaining case: the path must be current-folder-relative.
+			*/
+			structMelderDir currentFolder { };
+			Melder_getDefaultDir (& currentFolder);   // BUG if in library? check in Python, for instance
+			const bool weAreInTheRootFolder = ( currentFolder. path [0] == U'/' && currentFolder. path [1] == U'\0' );
+			conststring32 folderSeparator = ( weAreInTheRootFolder ? nullptr : U"/" );   // prevent a double slash
+			Melder_sprint (folder -> path,kMelder_MAXPATH+1, currentFolder. path, folderSeparator, path);
+		}
+	#elif defined (_WIN32)
+		/*
+			We assume that Win32 complete path names look like:
+				C:\WINDOWS\CTRL32.DLL
+				LPT1:
+				\\host\path
+		*/
+		structMelderDir dir { };
+		if (path [0] == U'~' && path [1] == U'/') {
+			Melder_getHomeDir (& dir);
+			Melder_sprint (folder -> path,kMelder_MAXPATH+1, dir. path, & path [1]);
+			for (;;) {
+				char32 *slash = str32chr (folder -> path, U'/');
+				if (! slash)
+					break;
+				*slash = U'\\';
+			}
+			return;
+		}
+		if (str32chr (path, U'/') && ! str32str (path, U"://")) {
+			char32 winPath [kMelder_MAXPATH+1];
+			Melder_sprint (winPath,kMelder_MAXPATH+1, path);
+			for (;;) {
+				char32 *slash = str32chr (winPath, U'/');
+				if (! slash)
+					break;
+				*slash = U'\\';
+			}
+			Melder_relativePathToFolder (winPath, folder);
+			return;
+		}
+		if (str32chr (path, U':') || path [0] == U'\\' && path [1] == U'\\') {
+			Melder_sprint (folder -> path,kMelder_MAXPATH+1, path);
+		} else {
+			Melder_getDefaultDir (& dir);   // BUG
+			Melder_sprint (folder -> path,kMelder_MAXPATH+1,
+				dir. path,
+				dir. path [0] != U'\0' && dir. path [Melder_length (dir. path) - 1] == U'\\' ? U"" : U"\\",
+				path
+			);
+		}
+	#endif
+}
+
 conststring32 Melder_dirToPath (MelderDir dir) {
 	return & dir -> path [0];
 }
@@ -656,6 +728,20 @@ bool MelderFile_exists (MelderFile file) {
 			Melder_clearError ();
 			return false;
 		}
+	#endif
+}
+
+bool MelderDir_exists (MelderDir folder) {
+	#if defined (UNIX)
+		char utf8path [kMelder_MAXPATH+1];
+		Melder_32to8_fileSystem_inplace (folder -> path, utf8path);
+		struct stat fileOrFolderStatus;
+		const bool exists = ( stat (utf8path, & fileOrFolderStatus) == 0 );
+		if (! exists)
+			return false;
+		return S_ISDIR (fileOrFolderStatus. st_mode);
+	#else
+		Melder_throw (U"MelderDir_exists() not implemented on Windows");
 	#endif
 }
 
