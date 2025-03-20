@@ -216,16 +216,43 @@ static void insertBoundaryOrPoint (TextGridArea me, integer itier, double t1, do
 
 static double getPitchFromIntervalTierText(conststring32 text) {
 	double ret = 0.0;
+    bool hasDecimalPoint = false;
+    double decimalPlace = 0.1;
+
 	for (const char32 *p = & text [0]; *p != U'\0'; p ++) {
 		char32 kar = *p;
-		if (kar < U'0' || kar > U'9') {
-			return -2;
+		if ((kar < U'0' || kar > U'9') && kar != U'_' && kar != U'.') {
+            return -2;
+        }
+
+		if (kar == U'_') {
+			break;
 		}
-		ret = ret * 10.0 + (kar - U'0');
+
+		if (kar == U'.') {
+            if (hasDecimalPoint) {
+                return -2;
+            }
+            hasDecimalPoint = true;
+        } else if (kar >= U'0' && kar <= U'9') {
+            if (hasDecimalPoint) {
+                ret = ret + (kar - U'0') * decimalPlace;
+                decimalPlace *= 0.1;
+            } else {
+                ret = ret * 10.0 + (kar - U'0');
+            }
+        }
 	}
 
 	if (ret < 0.0 || ret > 128.0) {
 		return -1;
+	}
+
+	// round to nearest integer
+	if (ret - floor (ret) >= 0.5) {
+		ret = ceil (ret);
+	} else {
+		ret = floor (ret);
 	}
 
 	return ret;
