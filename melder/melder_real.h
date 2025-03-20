@@ -36,8 +36,8 @@ static const double undefined = (0.0/0.0);   // NaN
 */
 //inline bool isdefined (double x) { return ! isinf (x) && ! isnan (x); }   /* portable */
 //inline bool isdefined (double x) { return isfinite (x); }   /* portable */
-inline bool isdefined (double x) { return ((* (uint64 *) & x) & 0x7FF0'0000'0000'0000) != 0x7FF0'0000'0000'0000; }
-inline bool isundef (double x) { return ((* (uint64 *) & x) & 0x7FF0'0000'0000'0000) == 0x7FF0'0000'0000'0000; }
+inline bool isdefined (double x) { return ((* (uint64 *) & x) & 0x7FF0000000000000) != 0x7FF0000000000000; }
+inline bool isundef (double x) { return ((* (uint64 *) & x) & 0x7FF0000000000000) == 0x7FF0000000000000; }
 
 template <typename T>
 constexpr T sqr (T x) {
