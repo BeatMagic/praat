@@ -248,13 +248,20 @@ static double getPitchFromIntervalTierText(conststring32 text) {
 		return -1;
 	}
 
-	// round to nearest integer
-	if (ret - floor (ret) >= 0.5) {
-		ret = ceil (ret);
-	} else {
-		ret = floor (ret);
+	// round to microtone (0.0, 0.25, 0.5, 0.75)
+	if (ret != floor (ret)) {
+		double integerPart = floor (ret);
+		double decimalPart = ret - integerPart;
+		double scaledDecimalPart = round (decimalPart * 4.0);
+		if (scaledDecimalPart == 4.0) {
+			// round up to next integer
+			ret = integerPart + 1.0;
+		} else {
+			// round to nearest microtone
+			ret = integerPart + scaledDecimalPart / 4.0;
+		}
 	}
-
+	
 	return ret;
 }
 
