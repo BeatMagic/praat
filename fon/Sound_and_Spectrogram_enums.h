@@ -29,4 +29,11 @@ enums_begin (kSound_to_Spectrogram_windowShape, 0)
 	enums_add (kSound_to_Spectrogram_windowShape, 5, GAUSSIAN, U"Gaussian")
 enums_end (kSound_to_Spectrogram_windowShape, 5, GAUSSIAN)
 
-/* End of Sound_and_Spectrogram_enums.h */
+enums_begin (kCQT_binsPerOctave, 1)
+	enums_add (kCQT_binsPerOctave, 1, BINS_12, U"12 bins per octave")
+	enums_add (kCQT_binsPerOctave, 2, BINS_24, U"24 bins per octave")
+	enums_add (kCQT_binsPerOctave, 3, BINS_36, U"36 bins per octave")
+	enums_add (kCQT_binsPerOctave, 4, BINS_48, U"48 bins per octave")
+enums_end (kCQT_binsPerOctave, 3, BINS_36)
+
+        /* End of Sound_and_Spectrogram_enums.h */

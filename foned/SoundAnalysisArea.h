@@ -46,7 +46,7 @@ Thing_define (SoundAnalysisArea, FunctionArea) {
 	autoFormant d_formant;
 	autoPointProcess d_pulses;
 	GuiMenuItem spectrogramToggle, pitchToggle, intensityToggle, formantToggle, pulsesToggle;
-	GuiMenuItem pitchGridToggle;
+	GuiMenuItem pitchGridToggle, cqtToggle;
 	std::vector<std::vector<double>> tierNotesData;
 	MelderCallback <void, structThing, integer> d_clickToChangePitchCallback;
 	Thing d_changedBoss;
