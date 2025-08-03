@@ -31,7 +31,7 @@
  #include "Sound_and_MultiSampledSpectrogram.h"
  #include "Spectrogram.h"
  
- boolean CQT = true;   // for using CQT instead of FFT
+ Boolean CQT = true;   // for using CQT instead of FFT
  
  Thing_implement (SoundAnalysisArea, FunctionArea, 0);
  
