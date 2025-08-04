@@ -31,7 +31,7 @@
  #include "Sound_and_MultiSampledSpectrogram.h"
  #include "Spectrogram.h"
  
- boolean CQT = true;   // for using CQT instead of FFT
+ Boolean CQT = true;   // for using CQT instead of FFT
  
  Thing_implement (SoundAnalysisArea, FunctionArea, 0);
  
@@ -3621,34 +3621,46 @@
 			 const double logOctave = log (2.0);
 			 
 			 // Draw note-level grid lines (short lines on left, 1% width)
-			 const double noteLineWidth = 0.01 * (my endWindow () - my startWindow ());
-			 double logF = ceil (logFmin / logSemitone) * logSemitone;
-			 while (logF < logFmax) {
-				 const double f = exp (logF);
-				 if (f > fmin && f < fmax) {
-					 const double logPos = (logF - logFmin) / (logFmax - logFmin);
-					 const bool isOctave = (fmod (logF / logOctave, 1.0) < 0.01);
-					 
-					 Graphics_setLineType (my graphics (), Graphics_DOTTED);
-					 if (isOctave) {
-						 // Octave lines: full width
-						 Graphics_line (my graphics (), my startWindow (), logPos, my endWindow (), logPos);
-						 Graphics_setLineType (my graphics (), Graphics_DRAWN);
-						 if (fabs (logPos - cursorLogPos) > 0.1 || !frequencyCursorVisible) {
-							 Graphics_setTextAlignment (my graphics (), Graphics_RIGHT, Graphics_HALF);
-							 const integer midiNote = frequencyToMidiNoteInteger (f);
-							 Graphics_text (my graphics (), my startWindow (), logPos,
-									 midiNote, U" - ", Melder_integer (Melder_iround (f)), U" Hz");
-						 }
-					 } else {
-						 // Note lines: short (10% width on left)
-						 Graphics_line (my graphics (), my startWindow (), logPos, 
-								 my startWindow () + noteLineWidth, logPos);
-					 }
-					 Graphics_setLineType (my graphics (), Graphics_DRAWN);
-				 }
-				 logF += logSemitone;
-			 }
+const double noteLineWidth = 0.01 * (my endWindow () - my startWindow ());
+
+int iStart = ceil (logFmin / logSemitone);
+int iEnd = floor (logFmax / logSemitone);
+
+for (int i = iStart; i <= iEnd; ++i) {
+	double logF = i * logSemitone;
+	double f = exp (logF);  // You had this line twice; one needs to go
+
+	if (f > fmin && f < fmax) {
+		const double logPos = (logF - logFmin) / (logFmax - logFmin);
+		const bool isOctave = (fmod (logF / logOctave, 1.0) < 0.01);
+
+		Graphics_setLineType (my graphics (), Graphics_DOTTED);
+		
+		if (isOctave) {
+			// Octave lines: full width, sky blue for good contrast against grayscale spectrogram
+			Graphics_setColour (my graphics (), MelderColour (0.3, 0.7, 1.0));  // Sky blue
+			Graphics_line (my graphics (), my startWindow (), logPos, my endWindow (), logPos);
+			Graphics_setLineType (my graphics (), Graphics_DRAWN);
+			
+			if (fabs (logPos - cursorLogPos) > 0.1 || !frequencyCursorVisible) {
+				Graphics_setColour (my graphics (), Melder_BLACK);  // Keep text black
+				Graphics_setTextAlignment (my graphics (), Graphics_RIGHT, Graphics_HALF);
+				const integer midiNote = frequencyToMidiNoteInteger (f);
+				Graphics_text (my graphics (), my startWindow (), logPos,
+					midiNote, U" - ", Melder_integer (Melder_iround (f)), U" Hz");
+			}
+		} else {
+			// Note lines: short (10% width on left), lighter sky blue for subtlety
+			Graphics_setColour (my graphics (), MelderColour (0.5, 0.8, 1.0));  // Light sky blue
+			Graphics_line (my graphics (), my startWindow (), logPos,
+				my startWindow () + noteLineWidth, logPos);
+		}
+		
+		Graphics_setLineType (my graphics (), Graphics_DRAWN);
+		// Reset color to default after drawing grid lines
+		Graphics_setColour (my graphics (), DataGuiColour_NONEDITABLE);
+	}
+}
 		 } else {
 			 // Original linear scale drawing
 			 if (!frequencyCursorVisible ||
