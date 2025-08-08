@@ -245,8 +245,6 @@ static void * gui_monitor (double progress, conststring32 message) {
 #if cocoa
 
 	static void mac_message (NSAlertStyle macAlertType, conststring32 message32) {
-//        NSLog(@"%@", [NSThread callStackSymbols]); // md gui 打印不出来
-//        return;
 		static char16 message16 [4000];
 		const integer messageLength = Melder_length (message32);
 		uinteger j = 0;
@@ -287,7 +285,7 @@ static void * gui_monitor (double progress, conststring32 message) {
 			Add the header in bold.
 		*/
 		NSString *header = [[NSString alloc] initWithCharacters: (const unichar *) & message16 [0]   length: lengthOfFirstSentence];   // note: init can change the object pointer!
-        NSLog(@"%s : header = %@", __func__, header);
+        printf("%s : header = %@", __func__, header);
 		if (header) {   // make this very safe, because we can be at error time or at fatal time
 			[alert setMessageText: header];
             
@@ -298,7 +296,7 @@ static void * gui_monitor (double progress, conststring32 message) {
 		*/
 		if (lengthOfFirstSentence < j) {
 			NSString *rest = [[NSString alloc] initWithCharacters: (const unichar *) & lineBreak [1]   length: j - 1 - lengthOfFirstSentence];
-            NSLog(@"%s : rest = %@", __func__, rest);
+            printf("%s : rest = %@", __func__, rest);
 
 			if (rest) {   // make this very safe, because we can be at error time or at crash time
 				[alert setInformativeText: rest];

@@ -803,12 +803,11 @@ void Graphics_polyline_closed (Graphics me, integer numberOfPoints, const double
 void Graphics_line (Graphics me, double x1WC, double y1WC, double x2WC, double y2WC) {
     if (isnan(x1WC) || isnan(y1WC) | isnan(x2WC)| isnan(y2WC)) {
         // @lixu
-//        NSLog(@"x1WC = %@", @(x1WC));
-//        NSLog(@"y1WC = %@", @(y1WC));
-//        NSLog(@"x2WC = %@", @(x2WC));
-//        NSLog(@"y2WC = %@", @(y2WC));
+//        printf("x1WC = %f \n", (x1WC));
+//        printf("y1WC = %f \n", (y1WC));
+//        printf("x2WC = %f \n", (x2WC));
+//        printf("y2WC = %f \n", (y2WC));
         return;
-        
     }
 	if (my recording) {
 		op (LINE, 4); put (x1WC); put (y1WC); put (x2WC); put (y2WC);

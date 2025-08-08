@@ -58,7 +58,7 @@ void structGuiOptionMenu :: v_show () {
 	#elif motif
 		XtManageChild (d_xmMenuBar);
     #elif cocoa
-		//NSLog(@"cocoa structGuiOptionMenu :: v_show"); // ?
+		//printf("cocoa structGuiOptionMenu :: v_show"); // ?
 	#endif
 }
 

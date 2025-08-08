@@ -47,8 +47,10 @@ Thing_implement (SoundAnalysisArea, FunctionArea, 0);
 #include "Prefs_copyToInstance.h"
 #include "SoundAnalysisArea_prefs.h"
 
+#if cocoa
 #include <Foundation/Foundation.h>
 #include <QuartzCore/QuartzCore.h>
+#endif
 
 bool hasAnyDecimalInTierNotesData (
                                    const std::vector<std::vector<double>> &tierNotesData) {
@@ -112,9 +114,7 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
         
         // === 优化1: 只计算需要的频率范围 ===
         const double Q = 1.0 / (pow (2.0, 1.0 / binsPerOctave) - 1.0);
-        if (!Melder_iround_check_valid(binsPerOctave * log2 (fmax / fmin))) {
-            NSLog(@"1");
-        }
+        
         const integer numberOfFreqs =
         Melder_iround (binsPerOctave * log2 (fmax / fmin));
         if (numberOfFreqs < 1) return autoSpectrogram ();
@@ -157,14 +157,12 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
         autoINTVEC validFreqs =
         raw_INTVEC (numberOfFreqs);   // 标记哪些频率需要计算
         integer validFreqCount = 0;
-        NSLog(@"numberOfFreqs = %@", @(numberOfFreqs));
+
         // @lixu 临时关闭计算 -NO
         for (integer k = 1; k <= numberOfFreqs; k++) {
             cqtFreqs[k] = fmin * pow (2.0, (k - 1.0) / binsPerOctave);
             windowLengths[k] = Q / cqtFreqs[k];
-            if (!Melder_iround_check_valid(windowLengths[k] / (2.0 * my dx))) {
-                NSLog(@"2");
-            }
+            
             windowSizes[k] =
             2 * Melder_iround (windowLengths[k] / (2.0 * my dx));
             if (windowSizes[k] < 2) windowSizes[k] = 2;
@@ -186,7 +184,6 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
         raw_VEC (validFreqCount);   // 存储kernel的总能量
         
         // @lixu 临时关闭计算 -NO
-        NSLog(@"validFreqCount = %@", @(validFreqCount));
         for (integer validIdx = 1; validIdx <= validFreqCount; validIdx++) {
             const integer ifreq = validFreqs[validIdx];
             const integer nsamp_window = windowSizes[ifreq];
@@ -232,20 +229,23 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
         
         // 按时间分块，提高内存局部性
         const integer timeBlockSize = (numberOfTimes < 32) ? numberOfTimes : 32;
-        NSLog(@"for numberOfTimes from = %@", @(0));
-        NSLog(@"for numberOfTimes to = %@", @(numberOfTimes));
-        NSLog(@"for numberOfTimes jump = %@", @(timeBlockSize));
+//        printf("for numberOfTimes from = %d \n", 0);
+//        printf("for numberOfTimes to = %d  \n", (numberOfTimes));
+//        printf("for numberOfTimes jump = %d  \n", (timeBlockSize));
+        printf("%s \n", __func__);
         // @lixu 临时关闭计算 -YES
-        double mediaTimeStart = CACurrentMediaTime() * 1000;// CACurrentMediaTime() * 1000; mach_absolute_time()
+#if cocoa
+        double mediaTimeStart = CACurrentMediaTime() * 1000;
+#endif
         for (integer timeBlock = 0; timeBlock < numberOfTimes;
              timeBlock += timeBlockSize) {
             const integer timeStart = timeBlock + 1;
             const integer timeEnd = (timeBlock + timeBlockSize < numberOfTimes)
             ? timeBlock + timeBlockSize
             : numberOfTimes;
-//            NSLog(@"for validFreqCount from = %@", @(1));
-//            NSLog(@"for validFreqCount to = %@", @(validFreqCount));
-//            NSLog(@"for validFreqCount jump = %@", @(1));
+//            printf("for validFreqCount from = %d  \n", (1));
+//            printf("for validFreqCount to = %d  \n", (validFreqCount));
+//            printf("for validFreqCount jump = %d  \n", (1));
             // === 优化6: 只处理有效频率 ===
             for (integer validIdx = 1; validIdx <= validFreqCount; validIdx++) {
                 const integer ifreq = validFreqs[validIdx];
@@ -260,9 +260,9 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
                     }
                     continue;
                 }
-//                NSLog(@"for iframe from = %@", @(timeStart));
-//                NSLog(@"for iframe to = %@", @(timeEnd));
-//                NSLog(@"for iframe jump = %@", @(1));
+//                printf("for iframe from = %d  \n", (timeStart));
+//                printf("for iframe to = %d  \n", (timeEnd));
+//                printf("for iframe jump = %d  \n", (1));
                 // 批量处理时间帧
                 for (integer iframe = timeStart; iframe <= timeEnd; iframe++) {
                     const double t = Sampled_indexToX (thee.get (), iframe);
@@ -275,9 +275,9 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
                         thy z[ifreq][iframe] = 0.0;
                         continue;
                     }
-//                    NSLog(@"for Sample from = %@", @(startSample));
-//                    NSLog(@"for Sample to = %@", @(endSample));
-//                    NSLog(@"for Sample jump = %@", @(4));
+//                    printf("for Sample from = %d  \n", (startSample));
+//                    printf("for Sample to = %d  \n", (endSample));
+//                    printf("for Sample jump = %d  \n", (4));
                     // === 优化8: 快速能量预检查（每4个样本检查一次） ===
                     double energySum = 0.0;
                     for (integer i = startSample; i <= endSample; i += 4) {
@@ -304,9 +304,9 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
                     const double precomputedNorm =
                     1.0 / sqrt (kernelMagnitudes[validIdx]);
                     
-//                    NSLog(@"for isamp from = %@", @(0));
-//                    NSLog(@"for isamp to = %@", @(endSample));
-//                    NSLog(@"for isamp jump = %@", @(1));
+//                    printf("for isamp from = %d  \n", (0));
+//                    printf("for isamp to = %d  \n", (endSample));
+//                    printf("for isamp jump = %d  \n", (1));
                     // 使用预计算的表进行快速计算
                     for (integer isamp = 0, i = startSample; i <= endSample;
                          i++, isamp++) {
@@ -339,15 +339,17 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
                     thy z[ifreq][iframe] = real * real + imag * imag;
                 }
             }
+#if cocoa
             double mediaTimeEnd = CACurrentMediaTime() * 1000;
-            NSLog(@"mediaTime interval for 2= %@", @(mediaTimeEnd - mediaTimeStart));
+            printf("mediaTime interval for 2= %f  \n", mediaTimeEnd - mediaTimeStart);
+#endif
             // 进度更新
             Melder_progress ((double) (timeEnd) / numberOfTimes,
                              U"Ultra Fast CQT: ", timeEnd, U" of ", numberOfTimes,
                              U" time frames");
         }
         
-        NSLog(@"numberOfFreqs = %@", @(numberOfFreqs));
+        printf("numberOfFreqs = %ld \n", numberOfFreqs);
         // @lixu 临时关闭计算-NO
         // === 优化11: 后处理 - 填充未计算的频率为零 ===
         for (integer ifreq = 1; ifreq <= numberOfFreqs; ifreq++) {
@@ -408,17 +410,18 @@ static double midiNoteToFrequency (double midiNote) {
 }
 
 static integer frequencyToMidiNoteInteger (double frequency) {
-    if (!Melder_iround_check_valid(frequencyToMidiNote (frequency))) {
-        NSLog(@"3");
-    }
+    
     return Melder_iround (frequencyToMidiNote (frequency));
 }
 
 static void tryToComputeSpectrogram (SoundAnalysisArea me) {
     
-    if (CQT && my instancePref_cqt_show ()) {
-        double mediaTimeStart = CACurrentMediaTime() * 1000;// CACurrentMediaTime() * 1000; mach_absolute_time()
+    printf("%s \n", __func__);
 
+    if (CQT && my instancePref_cqt_show ()) {
+#if cocoa
+        double mediaTimeStart = CACurrentMediaTime() * 1000;
+#endif
         autoMelderProgressOff progress;
         const double margin =
         (my instancePref_spectrogram_windowShape () ==
@@ -441,11 +444,14 @@ static void tryToComputeSpectrogram (SoundAnalysisArea me) {
             my d_spectrogram.reset ();
             Melder_clearError ();
         }
+#if cocoa
         double mediaTimeEnd = CACurrentMediaTime() * 1000;
-        NSLog(@"mediaTime interval CQT = %@", @(mediaTimeEnd - mediaTimeStart));
+        printf("mediaTime interval CQT = %f \n", mediaTimeEnd - mediaTimeStart);
+#endif
     } else {
-        double mediaTimeStart = CACurrentMediaTime() * 1000;// CACurrentMediaTime() * 1000; mach_absolute_time()
-
+#if cocoa
+        double mediaTimeStart = CACurrentMediaTime() * 1000;
+#endif
         autoMelderProgressOff progress;
         const double margin =
         (my instancePref_spectrogram_windowShape () ==
@@ -470,8 +476,10 @@ static void tryToComputeSpectrogram (SoundAnalysisArea me) {
             my d_spectrogram.reset ();   // signal a failure
             Melder_clearError ();
         }
+#if cocoa
         double mediaTimeEnd = CACurrentMediaTime() * 1000;
-        NSLog(@"mediaTime interval NO CQT = %@", @(mediaTimeEnd - mediaTimeStart));
+        printf("mediaTime interval NO CQT = %f \n", mediaTimeEnd - mediaTimeStart);
+#endif
     }
     
 }
@@ -570,9 +578,7 @@ static void tryToComputeFormants (SoundAnalysisArea me) {
          : 0.0   // the default: determined by analysis
          // window length
          );
-        if (!Melder_iround_check_valid( my instancePref_formant_numberOfFormants () * 2.0)) {
-            NSLog(@"4");
-        }
+        
         my d_formant = Sound_to_Formant_any (sound.get (), formantTimeStep,
                                              Melder_iround ( my instancePref_formant_numberOfFormants () * 2.0),
                                              my instancePref_formant_ceiling (),
@@ -920,10 +926,7 @@ void structSoundAnalysisArea ::v1_info () {
         /* Formant settings: */
         MelderInfo_writeLine (U"Formant ceiling: ",
                               our instancePref_formant_ceiling (), U" Hz");
-        if (!Melder_iround_check_valid( 2.0 *
-                                       our instancePref_formant_numberOfFormants ())) {
-            NSLog(@"5");
-        }
+        
         MelderInfo_writeLine (U"Formant number of poles: ",
                               Melder_iround (
                                              2.0 *
@@ -3222,9 +3225,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
             // Draw bottom frequency label with MIDI note
             if (!frequencyCursorVisible || cursorLogPos > 0.1) {
                 Graphics_setTextAlignment (my graphics (), Graphics_RIGHT, Graphics_HALF);
-                if (!Melder_iround_check_valid(frequencyToMidiNote (fmin))) {
-                    NSLog(@"3-1");
-                }
+                
                 const integer midiNoteMin = frequencyToMidiNoteInteger (fmin);
                 Graphics_text (my graphics (), my startWindow (),
                                0.0 - Graphics_dyMMtoWC (my graphics (), 0.5),
@@ -3234,9 +3235,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
             // Draw top frequency label with MIDI note
             if (!frequencyCursorVisible || cursorLogPos < 0.9) {
                 Graphics_setTextAlignment (my graphics (), Graphics_RIGHT, Graphics_HALF);
-                if (!Melder_iround_check_valid(frequencyToMidiNote (fmax))) {
-                    NSLog(@"3-2");
-                }
+                
                 const integer midiNoteMax = frequencyToMidiNoteInteger (fmax);
                 Graphics_text (my graphics (), my startWindow (), 1.0,
                                midiNoteMax, U" - ", Melder_float (Melder_half (fmax)), U" Hz");
@@ -3253,10 +3252,12 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
             
             int iStart = ceil (logFmin / logSemitone);
             int iEnd = floor (logFmax / logSemitone);
-            NSLog(@"iStart = %@", @(iStart));
-            NSLog(@"iEnd = %@", @(iEnd));
+            printf("iStart = %d \n", (iStart));
+            printf("iEnd = %d \n", (iEnd));
             // @lixu 临时关闭计算-YES
-            double mediaTimeStart = CACurrentMediaTime() * 1000;// CACurrentMediaTime() * 1000; mach_absolute_time()
+#if cocoa
+            double mediaTimeStart = CACurrentMediaTime() * 1000;
+#endif
             for (int i = iStart; i <= iEnd; ++i) {
                 double logF = i * logSemitone;
                 double f = exp (logF);  // You had this line twice; one needs to go
@@ -3277,13 +3278,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 //                        			if (fabs (logPos - cursorLogPos) > 0.1 || !frequencyCursorVisible) {
 //                        				Graphics_setColour (my graphics (), Melder_BLACK);  // Keep text black
 //                        				Graphics_setTextAlignment (my graphics (), Graphics_RIGHT, Graphics_HALF);
-//                                        if (!Melder_iround_check_valid(frequencyToMidiNote (f))) {
-//                                            NSLog(@"3-3");
-//                                        }
 //                        				const integer midiNote = frequencyToMidiNoteInteger (f);
-//                                        if (!Melder_iround_check_valid(f)) {
-//                                            NSLog(@"6");
-//                                        }
 //                        				Graphics_text (my graphics (), my startWindow (), logPos,
 //                        					midiNote, U" - ", Melder_integer (Melder_iround (f)), U" Hz");
 //                        			}
@@ -3300,8 +3295,10 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
                     Graphics_setColour (my graphics (), DataGuiColour_NONEDITABLE);
                 }
             }
+#if cocoa
             double mediaTimeEnd = CACurrentMediaTime() * 1000;
-            NSLog(@"mediaTime interval for 1= %@", @(mediaTimeEnd - mediaTimeStart));
+            printf("mediaTime interval for 1= %f \n", mediaTimeEnd - mediaTimeStart);
+#endif
         } else {
             // Original linear scale drawing
             if (!frequencyCursorVisible ||
@@ -3342,9 +3339,6 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
                 const double fmin = my instancePref_spectrogram_viewFrom ();
                 const double fmax = my instancePref_spectrogram_viewTo ();
                 const double y = frequencyToLogPosition (my d_spectrogram_cursor, fmin, fmax);
-                if (!Melder_iround_check_valid(frequencyToMidiNote (my d_spectrogram_cursor))) {
-                    NSLog(@"3-4");
-                }
                 const integer midiNote = frequencyToMidiNoteInteger (my d_spectrogram_cursor);
                 
                 // Left side label only
@@ -3393,11 +3387,14 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
     }
 }
 void structSoundAnalysisArea ::v_draw_analysis () {
+#if cocoa
     double mediaTimeStart = CACurrentMediaTime() * 1000;// CACurrentMediaTime() * 1000; mach_absolute_time()
-
+#endif
     SoundAnalysisArea_v_draw_analysis (this);
+#if cocoa
     double mediaTimeEnd = CACurrentMediaTime() * 1000;
-    NSLog(@"mediaTime interval total= %@", @(mediaTimeEnd - mediaTimeStart));
+    printf("mediaTime interval total= %f \n", mediaTimeEnd - mediaTimeStart);
+#endif
 }
 
 void structSoundAnalysisArea ::v_draw_analysis_formants () {
