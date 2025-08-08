@@ -285,7 +285,7 @@ static void * gui_monitor (double progress, conststring32 message) {
 			Add the header in bold.
 		*/
 		NSString *header = [[NSString alloc] initWithCharacters: (const unichar *) & message16 [0]   length: lengthOfFirstSentence];   // note: init can change the object pointer!
-        printf("%s : header = %@", __func__, header);
+        printf("%s : header = %s", __func__, [header cStringUsingEncoding:NSUTF8StringEncoding]);
 		if (header) {   // make this very safe, because we can be at error time or at fatal time
 			[alert setMessageText: header];
             
@@ -296,7 +296,7 @@ static void * gui_monitor (double progress, conststring32 message) {
 		*/
 		if (lengthOfFirstSentence < j) {
 			NSString *rest = [[NSString alloc] initWithCharacters: (const unichar *) & lineBreak [1]   length: j - 1 - lengthOfFirstSentence];
-            printf("%s : rest = %@", __func__, rest);
+            printf("%s : rest = %s", __func__,  [rest cStringUsingEncoding:NSUTF8StringEncoding]);
 
 			if (rest) {   // make this very safe, because we can be at error time or at crash time
 				[alert setInformativeText: rest];
