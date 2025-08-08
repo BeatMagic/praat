@@ -243,7 +243,10 @@ static void * gui_monitor (double progress, conststring32 message) {
 }
 
 #if cocoa
+
 	static void mac_message (NSAlertStyle macAlertType, conststring32 message32) {
+//        NSLog(@"%@", [NSThread callStackSymbols]); // md gui 打印不出来
+//        return;
 		static char16 message16 [4000];
 		const integer messageLength = Melder_length (message32);
 		uinteger j = 0;
@@ -284,8 +287,10 @@ static void * gui_monitor (double progress, conststring32 message) {
 			Add the header in bold.
 		*/
 		NSString *header = [[NSString alloc] initWithCharacters: (const unichar *) & message16 [0]   length: lengthOfFirstSentence];   // note: init can change the object pointer!
+        NSLog(@"%s : header = %@", __func__, header);
 		if (header) {   // make this very safe, because we can be at error time or at fatal time
 			[alert setMessageText: header];
+            
 			[header release];
 		}
 		/*
@@ -293,6 +298,8 @@ static void * gui_monitor (double progress, conststring32 message) {
 		*/
 		if (lengthOfFirstSentence < j) {
 			NSString *rest = [[NSString alloc] initWithCharacters: (const unichar *) & lineBreak [1]   length: j - 1 - lengthOfFirstSentence];
+            NSLog(@"%s : rest = %@", __func__, rest);
+
 			if (rest) {   // make this very safe, because we can be at error time or at crash time
 				[alert setInformativeText: rest];
 				[rest release];
@@ -305,9 +312,17 @@ static void * gui_monitor (double progress, conststring32 message) {
 			Write the message to stdout just in case.
 		*/
 		Melder_casual (message32);
-		[alert runModal];
-		[alert release];
+//		[alert runModal];
+//		[alert release];
+        
+//        printf("%s : %s", __func__, header);
 	}
+//static void mac_message (NSAlertStyle macAlertType, conststring32 message32) {
+//    dispatch_async(dispatch_get_main_queue(), ^{
+//        mac_message2(macAlertType,message32);
+//    });
+////    printf("%s : %s", __func__, message32);
+//}
 #endif
 
 #define theMessageFund_SIZE  100'000
@@ -315,6 +330,7 @@ static char * theMessageFund = nullptr;
 
 static void gui_fatal (conststring32 message) {
 	free (theMessageFund);
+    printf("%s",__func__);
 	#if gtk
 		GuiObject dialog = gtk_message_dialog_new (GTK_WINDOW (Melder_topShell -> d_gtkWindow), GTK_DIALOG_DESTROY_WITH_PARENT,
 			GTK_MESSAGE_ERROR, GTK_BUTTONS_NONE, "%s", Melder_peek32to8 (message));
@@ -330,6 +346,7 @@ static void gui_fatal (conststring32 message) {
 }
 
 static void gui_error (conststring32 message) {
+//    printf("%s", __func__);
 	const bool memoryIsLow = str32str (message, U"Out of memory");
 	if (memoryIsLow)
 		free (theMessageFund);

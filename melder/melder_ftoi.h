@@ -49,6 +49,11 @@ inline double Melder_roundTowardsZero (double x) {
 }
 
 inline integer Melder_iroundTowardsZero (double x) {
+    if (x >= (double) INTEGER_MIN && x <= (double) INTEGER_MAX) {
+        
+    } else {
+        printf("%s : x = %f", __func__, x);
+    }
 	Melder_require (x >= (double) INTEGER_MIN && x <= (double) INTEGER_MAX,
 		U"When rounding the real value ", x, U" towards zero, the result cannot be represented in an integer.");
 	return (integer) x;
@@ -60,6 +65,11 @@ inline double Melder_roundAwayFromZero (double x) {
 
 inline integer Melder_iroundAwayFromZero (double x) {
 	const double xround = Melder_roundAwayFromZero (x);
+    if (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX) {
+        
+    } else {
+        printf("%s : x = %f", __func__, x);
+    }
 	Melder_require (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX,
 		U"When rounding the real value ", x, U" away from zero, the result cannot be represented in an integer.");
 	return (integer) xround;
@@ -71,10 +81,29 @@ inline double Melder_round_tieUp (double x) {
 
 inline integer Melder_iround_tieUp (double x) {
 	const double xround = Melder_round_tieUp (x);
+    if (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX) {
+//        printf("%s : x = %f \n", __func__, x);
+
+    } else {
+        printf("%s : x = %f \n", __func__, x);
+//        return 343624;
+    }
 	Melder_require (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX,
 		U"When rounding the real value ", x, U", the result cannot be represented in an integer.");
 	return (integer) xround;
 }
+
+inline bool Melder_iround_check_valid (double x) {
+    const double xround = Melder_round_tieUp (x);
+    if (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX) {
+//        printf("%s : x = %f \n", __func__, x);
+        return true;
+    } else {
+        printf("%s : x = %f \n", __func__, x);
+        return false;
+    }
+}
+
 #define Melder_iround  Melder_iround_tieUp
 
 inline double Melder_round_tieDown (double x) {
@@ -85,6 +114,11 @@ inline integer Melder_iround_tieDown (double x) {
 	const double xround = Melder_round_tieDown (x);
 	Melder_require (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX,
 		U"When rounding the real value ", x, U", the result cannot be represented in an integer.");
+    if (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX) {
+        
+    } else {
+        printf("%s : x = %f \n", __func__, x);
+    }
 	return (integer) xround;
 }
 
@@ -94,8 +128,14 @@ inline double Melder_round_tieTowardsZero (double x) {
 
 inline integer Melder_iround_tieTowardsZero (double x) {
 	const double xround = Melder_round_tieTowardsZero (x);
+    if (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX) {
+        
+    } else {
+        printf("%s : x = %f \n", __func__, x);
+    }
 	Melder_require (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX,
 		U"When rounding the real value ", x, U", the result cannot be represented in an integer.");
+    
 	return (integer) xround;
 }
 
@@ -105,8 +145,15 @@ inline double Melder_round_tieAwayFromZero (double x) {
 
 inline integer Melder_iround_tieAwayFromZero (double x) {
 	const double xround = Melder_round_tieAwayFromZero (x);
+    if (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX) {
+        
+    } else {
+        printf("%s : x = %f \n", __func__, x);
+    }
+    
 	Melder_require (xround >= (double) INTEGER_MIN && xround <= (double) INTEGER_MAX,
 		U"When rounding the real value ", x, U", the result cannot be represented in an integer.");
+    
 	return (integer) xround;
 }
 
