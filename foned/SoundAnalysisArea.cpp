@@ -31,7 +31,7 @@
 #include "Sound_and_MultiSampledSpectrogram.h"
 #include "Spectrogram.h"
 
-Boolean CQT = false;   // for using CQT instead of FFT
+Boolean CQT = true;   // for using CQT instead of FFT
 
 Thing_implement (SoundAnalysisArea, FunctionArea, 0);
 
@@ -97,29 +97,39 @@ static autoSound extractSound (SoundAnalysisArea me, double tmin, double tmax) {
 	return sound;
 }
 
-// === 传统Praat兼容版本 - 无需任何现代库支持 ===
-// 这个版本只使用Praat原有的数据结构和函数
-// 这个版本只使用Praat原有的数据结构和函数
 autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
         double binsPerOctave, double minimumTimeStep1,
         kSound_to_Spectrogram_windowShape windowType,
         double maximumTimeOversampling) {
 	try {
 		const double nyquist = 0.5 / my dx;
-		if (fmin <= 0.0) fmin = 55.0;// 55 Hz, midi note A1
+		if (fmin <= 0.0) fmin = 55.0;
 		if (fmax <= 0.0 || fmax > nyquist) fmax = nyquist;
 		if (fmin >= fmax)
 			Melder_throw (U"Maximum frequency must be greater than minimum "
 			              U"frequency.");
 
-		// === 优化1: 只计算需要的频率范围 ===
-		const double Q = 1.0 / (pow (2.0, 1.0 / binsPerOctave) - 1.0);
+		// === 修正：简化的二档模式 ===
+		// const double C6_FREQUENCY = 1046.02;   //
+		// 根据实际选择频率范围调整，60%设为分界线
+		const double C6_FREQUENCY = fmin + 0.6 * (fmax - fmin);
+		// 低频段（<= C6）：
+		const integer LOW_FREQ_TIME_STEP = 2;
+		const integer LOW_FREQ_SAMPLE_STEP = 2;
 
+		// 高频段（> C6）：
+		const integer HIGH_FREQ_TIME_STEP = 3;
+		const integer HIGH_FREQ_SAMPLE_STEP = 3;
+		const integer HIGH_FREQ_FREQ_STEP = 2;
+
+		const double ENHANCED_KERNEL_THRESHOLD = 1e-5;
+
+		const double Q = 1.0 / (pow (2.0, 1.0 / binsPerOctave) - 1.0);
 		const integer numberOfFreqs =
 		        Melder_iround (binsPerOctave * log2 (fmax / fmin));
 		if (numberOfFreqs < 1) return autoSpectrogram ();
 
-		// 计算统一的时间采样
+		// 时间采样计算保持不变
 		const double minWindowLength = Q / fmax;
 		const double effectiveTimeWidth =
 		        minWindowLength / (2.0 * sqrt (NUMpi));
@@ -141,49 +151,57 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
 		const double t1 = my x1 + 0.5 * ((my nx - 1) * my dx -
 		                                        (numberOfTimes - 1) * timeStep);
 
-		// 创建输出频谱图
 		const double freqStep = (fmax - fmin) / numberOfFreqs;
 		autoSpectrogram thee = Spectrogram_create (my xmin, my xmax,
 		        numberOfTimes, timeStep, t1, fmin, fmax, numberOfFreqs,
 		        freqStep, fmin + 0.5 * freqStep);
 
-		// === 优化2: 稀疏核计算（参考RT-CQT） ===
-		const double KERNEL_THRESHOLD = 1e-6;   // 阈值，低于此值跳过计算
-
-		// 预计算CQT频率和有效窗口参数
+		// === 修正：简化的频率选择策略 ===
 		autoVEC cqtFreqs = raw_VEC (numberOfFreqs);
 		autoINTVEC windowSizes = raw_INTVEC (numberOfFreqs);
 		autoVEC windowLengths = raw_VEC (numberOfFreqs);
-		autoINTVEC validFreqs =
-		        raw_INTVEC (numberOfFreqs);   // 标记哪些频率需要计算
+		autoINTVEC validFreqs = raw_INTVEC (numberOfFreqs);
+		autoINTVEC freqComputeFlags =
+		        raw_INTVEC (numberOfFreqs);   // 标记计算vs插值
 		integer validFreqCount = 0;
 
-		// @lixu 临时关闭计算 -NO
 		for (integer k = 1; k <= numberOfFreqs; k++) {
 			cqtFreqs[k] = fmin * pow (2.0, (k - 1.0) / binsPerOctave);
 			windowLengths[k] = Q / cqtFreqs[k];
-
 			windowSizes[k] =
 			        2 * Melder_iround (windowLengths[k] / (2.0 * my dx));
 			if (windowSizes[k] < 2) windowSizes[k] = 2;
 
-			// === 优化3: 预检查频率是否在有效范围内 ===
 			if (cqtFreqs[k] >= fmin && cqtFreqs[k] <= fmax &&
 			        windowLengths[k] <= physicalDuration) {
-				validFreqs[++validFreqCount] = k;
+				bool shouldCompute = false;
+
+				// === 修正：简单的二档判断 ===
+				if (cqtFreqs[k] <= C6_FREQUENCY) {
+					// 低频段：总是计算，不跳过任何频率
+					shouldCompute = true;
+				} else {
+					// 高频段：可以按步长跳过
+					shouldCompute = (k % HIGH_FREQ_FREQ_STEP == 1);
+				}
+
+				if (shouldCompute) {
+					validFreqs[++validFreqCount] = k;
+					freqComputeFlags[k] = 1;   // 标记为计算
+				} else {
+					freqComputeFlags[k] = 0;   // 标记为插值
+				}
 			}
 		}
 
-		// === 优化4: 智能的预计算表（只为有效频率计算） ===
-		const integer maxWindowSize =
-		        windowSizes[validFreqs[1]];   // 最低有效频率的窗口最大
+		// === 预计算表：只为需要计算的频率 ===
+		const integer maxWindowSize = windowSizes[validFreqs[1]];
 		autoMAT cosTable = raw_MAT (validFreqCount, maxWindowSize);
 		autoMAT sinTable = raw_MAT (validFreqCount, maxWindowSize);
 		autoMAT windowTable = raw_MAT (validFreqCount, maxWindowSize);
-		autoVEC kernelMagnitudes =
-		        raw_VEC (validFreqCount);   // 存储kernel的总能量
+		autoVEC kernelMagnitudes = raw_VEC (validFreqCount);
 
-		// @lixu 临时关闭计算 -NO
+		// === 修正：移除复合表，避免精度问题 ===
 		for (integer validIdx = 1; validIdx <= validFreqCount; validIdx++) {
 			const integer ifreq = validFreqs[validIdx];
 			const integer nsamp_window = windowSizes[ifreq];
@@ -191,7 +209,6 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
 			double kernelEnergy = 0.0;
 
 			for (integer isamp = 0; isamp < nsamp_window; isamp++) {
-				// 预计算窗口函数
 				double windowValue = 1.0;
 				const double phase =
 				        (double) (isamp + 1) / (double) (nsamp_window + 1);
@@ -212,10 +229,10 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
 				default:
 					windowValue = 1.0;
 				}
+
 				windowTable[validIdx][isamp + 1] = windowValue;
 				kernelEnergy += windowValue * windowValue;
 
-				// 预计算三角函数
 				const double omega =
 				        2.0 * NUMpi * freq * (isamp - nsamp_window / 2) * my dx;
 				cosTable[validIdx][isamp + 1] = cos (omega);
@@ -224,49 +241,51 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
 			kernelMagnitudes[validIdx] = kernelEnergy;
 		}
 
-		// === 优化5: 批量时间处理（参考Queen Mary的思路） ===
-		autoMelderProgress progress (U"Sound to CQT Ultra Fast...");
+		autoMelderProgress progress (
+		        U"Sound to CQT Ultra Fast Visual Fixed...");
 
-		// 按时间分块，提高内存局部性
 		const integer timeBlockSize = (numberOfTimes < 32) ? numberOfTimes : 32;
-		//        printf("for numberOfTimes from = %d \n", 0);
-		//        printf("for numberOfTimes to = %d  \n", (numberOfTimes));
-		//        printf("for numberOfTimes jump = %d  \n", (timeBlockSize));
-		printf ("%s \n", __func__);
-		// @lixu 临时关闭计算 -YES 0
+
 #if cocoa
 		double mediaTimeStart = CACurrentMediaTime () * 1000;
 #endif
+
+		// main computation loop
 		for (integer timeBlock = 0; timeBlock < numberOfTimes;
 		        timeBlock += timeBlockSize) {
 			const integer timeStart = timeBlock + 1;
 			const integer timeEnd = (timeBlock + timeBlockSize < numberOfTimes)
 			                                ? timeBlock + timeBlockSize
 			                                : numberOfTimes;
-			//            printf("for validFreqCount from = %d  \n", (1));
-			//            printf("for validFreqCount to = %d  \n",
-			//            (validFreqCount)); printf("for validFreqCount jump =
-			//            %d  \n", (1));
-			// === 优化6: 只处理有效频率 ===
+
 			for (integer validIdx = 1; validIdx <= validFreqCount; validIdx++) {
 				const integer ifreq = validFreqs[validIdx];
 				const integer nsamp_window = windowSizes[ifreq];
 				const integer halfWindow = nsamp_window / 2;
+				const double freq = cqtFreqs[ifreq];
 
-				// === 优化7: 稀疏化 - 跳过低能量kernel ===
-				if (kernelMagnitudes[validIdx] < KERNEL_THRESHOLD) {
+				if (kernelMagnitudes[validIdx] < ENHANCED_KERNEL_THRESHOLD) {
 					for (integer iframe = timeStart; iframe <= timeEnd;
 					        iframe++) {
 						thy z[ifreq][iframe] = 0.0;
 					}
 					continue;
 				}
-				//                printf("for iframe from = %d  \n",
-				//                (timeStart)); printf("for iframe to = %d  \n",
-				//                (timeEnd)); printf("for iframe jump = %d  \n",
-				//                (1));
-				// 批量处理时间帧
-				for (integer iframe = timeStart; iframe <= timeEnd; iframe++) {
+
+				// 2 level sampling
+				integer timeStep, sampleStep;
+				if (freq <= C6_FREQUENCY) {
+					// low freq: higher sampling
+					timeStep = LOW_FREQ_TIME_STEP;
+					sampleStep = LOW_FREQ_SAMPLE_STEP;
+				} else {
+					// high freq: lower sampling
+					timeStep = HIGH_FREQ_TIME_STEP;
+					sampleStep = HIGH_FREQ_SAMPLE_STEP;
+				}
+
+				for (integer iframe = timeStart; iframe <= timeEnd;
+				        iframe += timeStep) {
 					const double t = Sampled_indexToX (thee.get (), iframe);
 					const integer centerSample =
 					        Sampled_xToNearestIndex (me, t);
@@ -275,13 +294,18 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
 
 					if (startSample < 1 || endSample > my nx) {
 						thy z[ifreq][iframe] = 0.0;
+						// === 修正：简单的时间插值 ===
+						if (timeStep > 1) {
+							for (integer skip = 1;
+							        skip < timeStep && iframe + skip <= timeEnd;
+							        skip++) {
+								thy z[ifreq][iframe + skip] = 0.0;
+							}
+						}
 						continue;
 					}
-					//                    printf("for Sample from = %d  \n",
-					//                    (startSample)); printf("for Sample to
-					//                    = %d  \n", (endSample)); printf("for
-					//                    Sample jump = %d  \n", (4));
-					// === 优化8: 快速能量预检查（每4个样本检查一次） ===
+
+					// 能量预检查保持原样
 					double energySum = 0.0;
 					for (integer i = startSample; i <= endSample; i += 4) {
 						if (my ny == 1) {
@@ -296,28 +320,27 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
 						}
 					}
 
-					// 如果窗口内能量太小，跳过详细计算
-					if (energySum < KERNEL_THRESHOLD * 1e-3) {
+					if (energySum < ENHANCED_KERNEL_THRESHOLD * 1e-3) {
 						thy z[ifreq][iframe] = 0.0;
+						if (timeStep > 1) {
+							for (integer skip = 1;
+							        skip < timeStep && iframe + skip <= timeEnd;
+							        skip++) {
+								thy z[ifreq][iframe + skip] = 0.0;
+							}
+						}
 						continue;
 					}
 
-					// === 优化9: 核心计算优化 ===
+					// === 修正：简化的样本计算 ===
 					longdouble realPart = 0.0, imagPart = 0.0;
 					const double precomputedNorm =
 					        1.0 / sqrt (kernelMagnitudes[validIdx]);
+					integer actualSamples = 0;
 
-					//                    printf("for isamp from = %d  \n",
-					//                    (0)); printf("for isamp to = %d  \n",
-					//                    (endSample)); printf("for isamp jump =
-					//                    %d  \n", (1));
-					// 使用预计算的表进行快速计算
 					for (integer isamp = 0, i = startSample; i <= endSample;
-					        i++, isamp++) {
-						const double windowValue =
-						        windowTable[validIdx][isamp + 1];
+					        i += sampleStep, isamp += sampleStep) {
 
-						// 多通道优化
 						double sampleValue;
 						if (my ny == 1) {
 							sampleValue = my z[1][i];
@@ -330,53 +353,91 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
 							sampleValue /= my ny;
 						}
 
-						// 使用预计算的三角函数
+						const double windowValue =
+						        windowTable[validIdx][isamp + 1];
 						realPart += sampleValue * windowValue *
 						            cosTable[validIdx][isamp + 1];
 						imagPart += sampleValue * windowValue *
 						            sinTable[validIdx][isamp + 1];
+						actualSamples++;
 					}
 
-					// === 优化10: 避免开方运算 ===
+					if (sampleStep > 1 && actualSamples > 0) {
+						// 计算实际采样的能量补偿因子
+						double energyCompensation =
+						        (double) nsamp_window / actualSamples;
+						realPart *= sqrt (energyCompensation);
+						imagPart *= sqrt (energyCompensation);
+					}
+
 					const double real = double (realPart) * precomputedNorm;
 					const double imag = double (imagPart) * precomputedNorm;
 					thy z[ifreq][iframe] = real * real + imag * imag;
+
+					// === 修正：改进的时间插值 ===
+					if (timeStep > 1) {
+						double currentValue = thy z[ifreq][iframe];
+						for (integer skip = 1;
+						        skip < timeStep && iframe + skip <= timeEnd;
+						        skip++) {
+							thy z[ifreq][iframe + skip] =
+							        currentValue * (1.0 - 0.1 * skip);
+						}
+					}
 				}
 			}
+
 #if cocoa
 			double mediaTimeEnd = CACurrentMediaTime () * 1000;
-			printf ("mediaTime interval for 2= %f  \n",
+			printf ("mediaTime interval = %f ms\n",
 			        mediaTimeEnd - mediaTimeStart);
 #endif
-			// 进度更新
+
 			Melder_progress ((double) (timeEnd) / numberOfTimes,
-			        U"Ultra Fast CQT: ", timeEnd, U" of ", numberOfTimes,
-			        U" time frames");
+			        U"Ultra Fast CQT Visual Fixed: ", timeEnd, U" of ",
+			        numberOfTimes, U" time frames");
 		}
 
-		printf ("numberOfFreqs = %ld \n", numberOfFreqs);
-		// @lixu 临时关闭计算-NO
-		// === 优化11: 后处理 - 填充未计算的频率为零 ===
 		for (integer ifreq = 1; ifreq <= numberOfFreqs; ifreq++) {
-			bool isValid = false;
-			for (integer validIdx = 1; validIdx <= validFreqCount; validIdx++) {
-				if (validFreqs[validIdx] == ifreq) {
-					isValid = true;
-					break;
+			if (freqComputeFlags[ifreq] == 0) {   // 需要插值的频率
+				integer nearestFreq = 0;
+				integer minDistance = numberOfFreqs;
+
+				for (integer k = 1; k <= numberOfFreqs; k++) {
+					if (freqComputeFlags[k] == 1) {
+						integer distance = abs (k - ifreq);
+						if (distance < minDistance) {
+							minDistance = distance;
+							nearestFreq = k;
+						}
+					}
 				}
-			}
-			if (!isValid) {
-				for (integer iframe = 1; iframe <= numberOfTimes; iframe++) {
-					thy z[ifreq][iframe] = 0.0;
+
+				// 简单复制最近频率的值，而非复杂插值
+				if (nearestFreq > 0) {
+					for (integer iframe = 1; iframe <= numberOfTimes;
+					        iframe++) {
+						thy z[ifreq][iframe] =
+						        thy z[nearestFreq][iframe] * 0.8;   // 轻微衰减
+					}
+				} else {
+					for (integer iframe = 1; iframe <= numberOfTimes;
+					        iframe++) {
+						thy z[ifreq][iframe] = 0.0;
+					}
 				}
 			}
 		}
+
+		printf ("numberOfFreqs = %ld, computed = %ld (%.1f%% reduction)\n",
+		        numberOfFreqs, validFreqCount,
+		        100.0 * (1.0 - (double) validFreqCount / numberOfFreqs));
 
 		return thee;
 
 	} catch (MelderError) {
-		Melder_throw (
-		        me, U": Ultra Fast CQT spectrogram analysis not performed.");
+		Melder_throw (me,
+		        U": Ultra Fast CQT Visual spectrogram analysis not performed.");
 	}
 }
 
@@ -434,12 +495,23 @@ static void tryToComputeSpectrogram (SoundAnalysisArea me) {
 		double mediaTimeStart = CACurrentMediaTime () * 1000;
 #endif
 		autoMelderProgressOff progress;
-		const double margin =
-		        (my instancePref_spectrogram_windowShape () ==
-		                                kSound_to_Spectrogram_windowShape::
-		                                        GAUSSIAN
-		                        ? my instancePref_spectrogram_windowLength ()
-		                        : 0.5 * my instancePref_spectrogram_windowLength ());
+		// const double margin =
+		//         (my instancePref_spectrogram_windowShape () ==
+		//                                 kSound_to_Spectrogram_windowShape::
+		//                                         GAUSSIAN
+		//                         ? my instancePref_spectrogram_windowLength ()
+		//                         : 0.5 * my
+		//                         instancePref_spectrogram_windowLength ());
+
+		// 修复margin计算，使用CQT最大窗口长度作为margin
+		const double binsPerOctave =
+		        getBinsPerOctaveFromEnum (my instancePref_cqt_binsPerOctave ());
+		const double Q = 1.0 / (pow (2.0, 1.0 / binsPerOctave) - 1.0);
+		const double fmin = my instancePref_spectrogram_viewFrom ();
+
+		// 使用CQT最大窗口长度作为margin
+		const double maxWindowLength = Q / fmin;
+		const double margin = maxWindowLength * 0.6;   // 增加一些安全边距
 		// @lixu 临时关闭计算-NO
 		try {
 			autoSound sound = extractSound (
@@ -449,7 +521,7 @@ static void tryToComputeSpectrogram (SoundAnalysisArea me) {
 			my d_spectrogram = Sound_to_CQT_Ultra_Fast (sound.get (),
 			        my instancePref_spectrogram_viewFrom (),
 			        my instancePref_spectrogram_viewTo (), binsPerOctave, 0.02,
-			        kSound_to_Spectrogram_windowShape::HANNING, 1.0);
+			        kSound_to_Spectrogram_windowShape::GAUSSIAN, 1.0);
 			my d_spectrogram->xmin = my startWindow ();
 			my d_spectrogram->xmax = my endWindow ();
 		} catch (MelderError) {
@@ -3240,9 +3312,10 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		        my instancePref_spectrogram_show ()) {
 			// Draw logarithmic frequency scale for CQT
 			double fmin = my instancePref_spectrogram_viewFrom ();
-			if (fmin <= 0.0) fmin = 55.0; // lower limit, 55 Hz, midi note A1
+			if (fmin <= 0.0) fmin = 55.0;   // lower limit, 55 Hz, midi note A1
 			double fmax = my instancePref_spectrogram_viewTo ();
-			if (fmax <= 0.0 || fmax > 200000.0) fmax = 200000.0;// upper limit
+			if (fmax <= 0.0 || fmax > 200000.0)
+				fmax = 200000.0;   // upper limit
 			const double cursorLogPos = frequencyToLogPosition (
 			        my d_spectrogram_cursor, fmin, fmax);
 
@@ -3305,31 +3378,22 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 						Graphics_setColour (my graphics (),
 						        MelderColour (0.3, 0.7, 1.0));   // Sky blue
 						// @lixu isnan来源 临时 0
-						//                        Graphics_line (my graphics (),
-						//                        my startWindow (), logPos, my
-						//                        endWindow (), logPos);
+						Graphics_line (my graphics (), my startWindow (),
+						        logPos, my endWindow (), logPos);
 						Graphics_setLineType (my graphics (), Graphics_DRAWN);
 						// @lixu melder_iround 来源 0
-						//                        			if (fabs (logPos -
-						//                        cursorLogPos) > 0.1 ||
-						//                        !frequencyCursorVisible) {
-						//                        				Graphics_setColour
-						//                        (my graphics (),
-						//                        Melder_BLACK);  // Keep text
-						//                        black
-						//                        				Graphics_setTextAlignment
-						//                        (my graphics (),
-						//                        Graphics_RIGHT,
-						//                        Graphics_HALF);
-						//                        const integer midiNote =
-						//                        frequencyToMidiNoteInteger
-						//                        (f); Graphics_text (my
-						//                        graphics (), my startWindow
-						//                        (), logPos,
-						//                        midiNote, U" - ",
-						//                        Melder_integer (Melder_iround
-						//                        (f)), U" Hz");
-						//                        			}
+						if (fabs (logPos - cursorLogPos) > 0.1 ||
+						        !frequencyCursorVisible) {
+							Graphics_setColour (my graphics (),
+							        Melder_BLACK);   // Keep text
+							Graphics_setTextAlignment (my graphics (),
+							        Graphics_RIGHT, Graphics_HALF);
+							const integer midiNote =
+							        frequencyToMidiNoteInteger (f);
+							Graphics_text (my graphics (), my startWindow (),
+							        logPos, midiNote, U" - ",
+							        Melder_integer (Melder_iround (f)), U" Hz");
+						}
 					} else {
 						// Note lines: short (10% width on left), lighter sky
 						// blue for subtlety
@@ -3337,12 +3401,9 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 						        MelderColour (
 						                0.5, 0.8, 1.0));   // Light sky blue
 						                                   // @lixu isnan 来源 0
-						//                        Graphics_line (my graphics (),
-						//                        my startWindow (), logPos,
-						//                                       my startWindow
-						//                                       () +
-						//                                       noteLineWidth,
-						//                                       logPos);
+						Graphics_line (my graphics (), my startWindow (),
+						        logPos, my startWindow () + noteLineWidth,
+						        logPos);
 					}
 
 					Graphics_setLineType (my graphics (), Graphics_DRAWN);
@@ -3395,9 +3456,11 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 			        my instancePref_spectrogram_show ()) {
 				// For CQT mode, convert frequency to log position
 				double fmin = my instancePref_spectrogram_viewFrom ();
-				if (fmin <= 0.0) fmin = 55.0; // lower limit, 55 Hz, midi note A1
+				if (fmin <= 0.0)
+					fmin = 55.0;   // lower limit, 55 Hz, midi note A1
 				double fmax = my instancePref_spectrogram_viewTo ();
-				if (fmax <= 0.0 || fmax > 200000.0) fmax = 200000.0;// upper limit
+				if (fmax <= 0.0 || fmax > 200000.0)
+					fmax = 200000.0;   // upper limit
 				const double y = frequencyToLogPosition (
 				        my d_spectrogram_cursor, fmin, fmax);
 				const integer midiNote =
