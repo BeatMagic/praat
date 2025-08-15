@@ -505,7 +505,8 @@ static void tryToComputeSpectrogram (SoundAnalysisArea me) {
 		const double binsPerOctave =
 		        getBinsPerOctaveFromEnum (my instancePref_cqt_binsPerOctave ());
 		const double Q = 1.0 / (pow (2.0, 1.0 / binsPerOctave) - 1.0);
-		const double fmin = my instancePref_spectrogram_viewFrom ();
+		double fmin = my instancePref_spectrogram_viewFrom ();
+		if (fmin <= 0.0) fmin = 55.0;   // lower limit, 55 Hz, midi note A1
 
 		// 使用CQT最大窗口长度作为margin
 		const double maxWindowLength = Q / fmin;
