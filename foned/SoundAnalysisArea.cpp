@@ -31,8 +31,6 @@
 #include "Sound_and_MultiSampledSpectrogram.h"
 #include "Spectrogram.h"
 
-Boolean CQT = true;   // for using CQT instead of FFT
-
 Thing_implement (SoundAnalysisArea, FunctionArea, 0);
 
 #include "enums_getText.h"
@@ -490,7 +488,7 @@ static void tryToComputeSpectrogram (SoundAnalysisArea me) {
 
 	printf ("%s \n", __func__);
 
-	if (CQT && my instancePref_cqt_show ()) {
+	if (my instancePref_cqt_show ()) {
 #if cocoa
 		double mediaTimeStart = CACurrentMediaTime () * 1000;
 #endif
@@ -702,7 +700,7 @@ static void tryToComputePulses (SoundAnalysisArea me) {
  will (try to) create an Analysis if it does not exist.
  */
 static void tryToHaveSpectrogram (SoundAnalysisArea me) {
-	if (CQT) {
+	if (my instancePref_cqt_show ()) {
 		if (!my d_spectrogram && my endWindow () - my startWindow () <=
 		                                 my instancePref_longestAnalysis ())
 			tryToComputeSpectrogram (me);
@@ -819,7 +817,7 @@ bool structSoundAnalysisArea ::v_mouse (GuiDrawingArea_MouseEvent event,
 
 	if (our isMoveWhileButtonDown && x_world > our startWindow () &&
 	        x_world < our endWindow ()) {
-		if (CQT && our instancePref_cqt_show () &&
+		if (our instancePref_cqt_show () &&
 		        our instancePref_spectrogram_show ()) {
 			// Use logarithmic scale for CQT mode
 			// @lixu 临时关闭计算-NO
@@ -1642,9 +1640,6 @@ static void menu_cb_showCQT (SoundAnalysisArea me, EDITOR_ARGS) {
 	my setInstancePref_cqt_show (!my instancePref_cqt_show ());   // toggle
 	GuiMenuItem_check (
 	        my cqtToggle, my instancePref_cqt_show ());   // update UI
-
-	// Control the global CQT boolean
-	CQT = my instancePref_cqt_show ();
 
 	// Force spectrogram refresh when CQT mode changes
 	my d_spectrogram.reset ();
@@ -2908,34 +2903,19 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		Graphics_setFontSize (my graphics (), 12);
 		return;
 	}
-	// spectrogram and CQT
-	if (CQT) {
-		if (my instancePref_spectrogram_show ()) tryToHaveSpectrogram (me);
+	// spectrogram and CQT, delete boolean CQT for simplicity
 
-		if (my instancePref_spectrogram_show () && my d_spectrogram) {
-			Spectrogram_paintInside (my d_spectrogram.get (), my graphics (),
-			        my startWindow (), my endWindow (),
-			        my instancePref_spectrogram_viewFrom (),
-			        my instancePref_spectrogram_viewTo (),
-			        my instancePref_spectrogram_maximum (),
-			        my instancePref_spectrogram_autoscaling (),
-			        my instancePref_spectrogram_dynamicRange (),
-			        my instancePref_spectrogram_preemphasis (),
-			        my instancePref_spectrogram_dynamicCompression ());
-		}
-	} else {
-		if (my instancePref_spectrogram_show ()) tryToHaveSpectrogram (me);
-		if (my instancePref_spectrogram_show () && my d_spectrogram) {
-			Spectrogram_paintInside (my d_spectrogram.get (), my graphics (),
-			        my startWindow (), my endWindow (),
-			        my instancePref_spectrogram_viewFrom (),
-			        my instancePref_spectrogram_viewTo (),
-			        my instancePref_spectrogram_maximum (),
-			        my instancePref_spectrogram_autoscaling (),
-			        my instancePref_spectrogram_dynamicRange (),
-			        my instancePref_spectrogram_preemphasis (),
-			        my instancePref_spectrogram_dynamicCompression ());
-		}
+	if (my instancePref_spectrogram_show ()) tryToHaveSpectrogram (me);
+	if (my instancePref_spectrogram_show () && my d_spectrogram) {
+		Spectrogram_paintInside (my d_spectrogram.get (), my graphics (),
+		        my startWindow (), my endWindow (),
+		        my instancePref_spectrogram_viewFrom (),
+		        my instancePref_spectrogram_viewTo (),
+		        my instancePref_spectrogram_maximum (),
+		        my instancePref_spectrogram_autoscaling (),
+		        my instancePref_spectrogram_dynamicRange (),
+		        my instancePref_spectrogram_preemphasis (),
+		        my instancePref_spectrogram_dynamicCompression ());
 	}
 
 	if (my instancePref_pitch_show ()) tryToHavePitch (me);
@@ -3290,7 +3270,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		                        my instancePref_spectrogram_viewTo ());
 
 		// Set window coordinates based on whether we're using CQT log scale
-		if (CQT && my instancePref_cqt_show () &&
+		if (my instancePref_cqt_show () &&
 		        my instancePref_spectrogram_show ()) {
 			// For CQT, use log scale: map frequency range to 0-1
 			// @lixu 临时关闭计算-NO
@@ -3308,7 +3288,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		Graphics_setLineType (my graphics (), Graphics_DRAWN);
 		Graphics_setColour (my graphics (), DataGuiColour_NONEDITABLE);
 
-		if (CQT && my instancePref_cqt_show () &&
+		if (my instancePref_cqt_show () &&
 		        my instancePref_spectrogram_show ()) {
 			// Draw logarithmic frequency scale for CQT
 			double fmin = my instancePref_spectrogram_viewFrom ();
@@ -3452,7 +3432,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		Graphics_setLineType (my graphics (), Graphics_DOTTED);
 		Graphics_setColour (my graphics (), DataGuiColour_NONEDITABLE_SELECTED);
 		if (frequencyCursorVisible) {
-			if (CQT && my instancePref_cqt_show () &&
+			if (my instancePref_cqt_show () &&
 			        my instancePref_spectrogram_show ()) {
 				// For CQT mode, convert frequency to log position
 				double fmin = my instancePref_spectrogram_viewFrom ();
