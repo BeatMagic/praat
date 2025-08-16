@@ -98,7 +98,7 @@ static autoSound extractSound (SoundAnalysisArea me, double tmin, double tmax) {
 autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
         double binsPerOctave, double minimumTimeStep1,
         kSound_to_Spectrogram_windowShape windowType,
-        double maximumTimeOversampling) {
+        double maximumTimeOversampling, double Q) {
 	try {
 		const double nyquist = 0.5 / my dx;
 		if (fmin <= 0.0) fmin = 55.0;
@@ -116,13 +116,12 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
 		const integer LOW_FREQ_SAMPLE_STEP = 2;
 
 		// 高频段（> C6）：
-		const integer HIGH_FREQ_TIME_STEP = 3;
+		const integer HIGH_FREQ_TIME_STEP = 2;
 		const integer HIGH_FREQ_SAMPLE_STEP = 3;
 		const integer HIGH_FREQ_FREQ_STEP = 2;
 
 		const double ENHANCED_KERNEL_THRESHOLD = 1e-5;
 
-		const double Q = 1.0 / (pow (2.0, 1.0 / binsPerOctave) - 1.0);
 		const integer numberOfFreqs =
 		        Melder_iround (binsPerOctave * log2 (fmax / fmin));
 		if (numberOfFreqs < 1) return autoSpectrogram ();
@@ -493,18 +492,10 @@ static void tryToComputeSpectrogram (SoundAnalysisArea me) {
 		double mediaTimeStart = CACurrentMediaTime () * 1000;
 #endif
 		autoMelderProgressOff progress;
-		// const double margin =
-		//         (my instancePref_spectrogram_windowShape () ==
-		//                                 kSound_to_Spectrogram_windowShape::
-		//                                         GAUSSIAN
-		//                         ? my instancePref_spectrogram_windowLength ()
-		//                         : 0.5 * my
-		//                         instancePref_spectrogram_windowLength ());
-
-		// 修复margin计算，使用CQT最大窗口长度作为margin
 		const double binsPerOctave =
 		        getBinsPerOctaveFromEnum (my instancePref_cqt_binsPerOctave ());
-		const double Q = 1.0 / (pow (2.0, 1.0 / binsPerOctave) - 1.0);
+		const double qScale = my instancePref_cqt_qScale ();
+		const double Q = 1.0 / (pow (2.0, 1.0 / binsPerOctave) - 1.0) * qScale;
 		double fmin = my instancePref_spectrogram_viewFrom ();
 		if (fmin <= 0.0) fmin = 55.0;   // lower limit, 55 Hz, midi note A1
 
@@ -515,12 +506,10 @@ static void tryToComputeSpectrogram (SoundAnalysisArea me) {
 		try {
 			autoSound sound = extractSound (
 			        me, my startWindow () - margin, my endWindow () + margin);
-			const double binsPerOctave = getBinsPerOctaveFromEnum (
-			        my instancePref_cqt_binsPerOctave ());
 			my d_spectrogram = Sound_to_CQT_Ultra_Fast (sound.get (),
 			        my instancePref_spectrogram_viewFrom (),
 			        my instancePref_spectrogram_viewTo (), binsPerOctave, 0.02,
-			        kSound_to_Spectrogram_windowShape::GAUSSIAN, 1.0);
+			        kSound_to_Spectrogram_windowShape::GAUSSIAN, 1.0, Q);
 			my d_spectrogram->xmin = my startWindow ();
 			my d_spectrogram->xmax = my endWindow ();
 		} catch (MelderError) {
@@ -1652,11 +1641,17 @@ static void menu_cb_cqtSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 	EDITOR_FORM (U"CQT settings", U"CQT Settings")
 	OPTIONMENU_ENUM (kCQT_binsPerOctave, binsPerOctave, U"Bins per octave",
 	        my default_cqt_binsPerOctave ())
+	POSITIVE (qScale, U"Q scale (range: 0.1-10.0)", my default_cqt_qScale ())
 	EDITOR_OK
 	SET_ENUM (binsPerOctave, kCQT_binsPerOctave,
 	        my instancePref_cqt_binsPerOctave ())
+	SET_REAL (qScale, my instancePref_cqt_qScale ())
 	EDITOR_DO
+	// Validate Q scale range
+	if (qScale < 0.1) qScale = 0.1;
+	if (qScale > 10.0) qScale = 10.0;
 	my setInstancePref_cqt_binsPerOctave (binsPerOctave);
+	my setInstancePref_cqt_qScale (qScale);
 	my d_spectrogram.reset ();
 	FunctionEditor_redraw (my functionEditor ());
 	EDITOR_END
@@ -3582,6 +3577,12 @@ void structSoundAnalysisArea ::v9_repairPreferences () {
 	        our instancePref_log2_toInfoWindow () == false) {
 		our setInstancePref_log2_toLogFile (true);
 		our setInstancePref_log2_toInfoWindow (true);
+	}
+	if (!(our instancePref_cqt_qScale () >= 0.1 &&
+	            our instancePref_cqt_qScale () <=
+	                    10.0)) {   // NaN-safe test and range validation
+		our setInstancePref_cqt_qScale (
+		        Melder_atof (our default_cqt_qScale ()));
 	}
 	if (!our v_hasSpectrogram ())
 		our setInstancePref_spectrogram_show (
