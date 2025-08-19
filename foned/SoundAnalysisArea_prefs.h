@@ -23,7 +23,7 @@ Prefs_begin (SoundAnalysisArea)
 	InstancePrefs_addDouble  (SoundAnalysisArea, fixedTimeStep,                   1, U"0.01")   // seconds
 	InstancePrefs_addInteger (SoundAnalysisArea, numberOfTimeStepsPerView,        1, U"100")
 	InstancePrefs_addBool    (SoundAnalysisArea, spectrogram_show,                1, true)
-	InstancePrefs_addDouble  (SoundAnalysisArea, spectrogram_viewFrom,            2, U"0.0")   // Hz
+	InstancePrefs_addDouble  (SoundAnalysisArea, spectrogram_viewFrom,            2, U"22.5")   // Hz
 	InstancePrefs_addDouble  (SoundAnalysisArea, spectrogram_viewTo,              2, U"5000.0")   // Hz
 	InstancePrefs_addDouble  (SoundAnalysisArea, spectrogram_windowLength,        2, U"0.005")   // seconds
 	InstancePrefs_addDouble  (SoundAnalysisArea, spectrogram_dynamicRange,        2, U"70.0")   // dB
@@ -41,6 +41,9 @@ Prefs_begin (SoundAnalysisArea)
 	InstancePrefs_addDouble  (SoundAnalysisArea, cqt_qScale,                      1, U"1.0")
 	InstancePrefs_addBool    (SoundAnalysisArea, pitch_show,                      1, true)
 	InstancePrefs_addBool    (SoundAnalysisArea, pitchGrid_show,                  1, false)
+	InstancePrefs_addEnum    (SoundAnalysisArea, pitchGrid_key,                   1, kSoundAnalysisArea_pitchGrid_key, C_MAJOR)
+	InstancePrefs_addBool    (SoundAnalysisArea, pitchGrid_showNoteNames,         1, true)
+	InstancePrefs_addEnum    (SoundAnalysisArea, pitchGrid_solfegeSystem,         1, kSoundAnalysisArea_pitchGrid_solfegeSystem, FIXED_DO)
 	InstancePrefs_addDouble  (SoundAnalysisArea, pitch_floor,                     1, U"75.0")
 	InstancePrefs_addDouble  (SoundAnalysisArea, pitch_ceiling,                   1, U"500.0")
 	InstancePrefs_addEnum    (SoundAnalysisArea, pitch_unit,                      1, kPitch_unit, DEFAULT)

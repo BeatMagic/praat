@@ -46,3 +46,23 @@ enums_begin (kSoundAnalysisArea_formant_analysisMethod, 1)
 enums_end (kSoundAnalysisArea_formant_analysisMethod, 1, BURG)
 
 /* End of file SoundAnalysisArea_enums.h */
+
+enums_begin (kSoundAnalysisArea_pitchGrid_key, 1)
+	enums_add (kSoundAnalysisArea_pitchGrid_key, 1, C_MAJOR, U"C major")
+	enums_add (kSoundAnalysisArea_pitchGrid_key, 2, G_MAJOR, U"G major")
+	enums_add (kSoundAnalysisArea_pitchGrid_key, 3, D_MAJOR, U"D major")
+	enums_add (kSoundAnalysisArea_pitchGrid_key, 4, A_MAJOR, U"A major")
+	enums_add (kSoundAnalysisArea_pitchGrid_key, 5, E_MAJOR, U"E major")
+	enums_add (kSoundAnalysisArea_pitchGrid_key, 6, B_MAJOR, U"B major")
+	enums_add (kSoundAnalysisArea_pitchGrid_key, 7, F_SHARP_MAJOR, U"F# major")
+	enums_add (kSoundAnalysisArea_pitchGrid_key, 8, C_SHARP_MAJOR, U"C# major")
+	enums_add (kSoundAnalysisArea_pitchGrid_key, 9, F_MAJOR, U"F major")
+	enums_add (kSoundAnalysisArea_pitchGrid_key, 10, B_FLAT_MAJOR, U"Bb major")
+	enums_add (kSoundAnalysisArea_pitchGrid_key, 11, E_FLAT_MAJOR, U"Eb major")
+	enums_add (kSoundAnalysisArea_pitchGrid_key, 12, A_FLAT_MAJOR, U"Ab major")
+enums_end (kSoundAnalysisArea_pitchGrid_key, 12, C_MAJOR)
+
+enums_begin (kSoundAnalysisArea_pitchGrid_solfegeSystem, 1)
+	enums_add (kSoundAnalysisArea_pitchGrid_solfegeSystem, 1, FIXED_DO, U"Fixed Do")
+	enums_add (kSoundAnalysisArea_pitchGrid_solfegeSystem, 2, MOVABLE_DO, U"Movable Do")
+enums_end (kSoundAnalysisArea_pitchGrid_solfegeSystem, 2, FIXED_DO)
