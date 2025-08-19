@@ -495,83 +495,8 @@ static conststring32 midiNoteToNoteName (integer midiNote, kSoundAnalysisArea_pi
 	// Get base note name
 	conststring32 baseNote = cMajorNotes[noteInOctave];
 	
-	// Apply key signature adjustments based on the circle of fifths
-	switch (key) {
-	case kSoundAnalysisArea_pitchGrid_key::G_MAJOR:
-		// G major: F becomes F♯
-		if (noteInOctave == 5) baseNote = U"F♯";
-		break;
-	case kSoundAnalysisArea_pitchGrid_key::D_MAJOR:
-		// D major: F becomes F♯, C becomes C♯
-		if (noteInOctave == 5) baseNote = U"F♯";
-		else if (noteInOctave == 0) baseNote = U"C♯";
-		break;
-	case kSoundAnalysisArea_pitchGrid_key::A_MAJOR:
-		// A major: F♯, C♯, G♯
-		if (noteInOctave == 5) baseNote = U"F♯";
-		else if (noteInOctave == 0) baseNote = U"C♯";
-		else if (noteInOctave == 7) baseNote = U"G♯";
-		break;
-	case kSoundAnalysisArea_pitchGrid_key::E_MAJOR:
-		// E major: F♯, C♯, G♯, D♯
-		if (noteInOctave == 5) baseNote = U"F♯";
-		else if (noteInOctave == 0) baseNote = U"C♯";
-		else if (noteInOctave == 7) baseNote = U"G♯";
-		else if (noteInOctave == 2) baseNote = U"D♯";
-		break;
-	case kSoundAnalysisArea_pitchGrid_key::B_MAJOR:
-		// B major: F♯, C♯, G♯, D♯, A♯
-		if (noteInOctave == 5) baseNote = U"F♯";
-		else if (noteInOctave == 0) baseNote = U"C♯";
-		else if (noteInOctave == 7) baseNote = U"G♯";
-		else if (noteInOctave == 2) baseNote = U"D♯";
-		else if (noteInOctave == 9) baseNote = U"A♯";
-		break;
-	case kSoundAnalysisArea_pitchGrid_key::F_SHARP_MAJOR:
-		// F♯ major: F♯, C♯, G♯, D♯, A♯, E♯
-		if (noteInOctave == 5) baseNote = U"F♯";
-		else if (noteInOctave == 0) baseNote = U"C♯";
-		else if (noteInOctave == 7) baseNote = U"G♯";
-		else if (noteInOctave == 2) baseNote = U"D♯";
-		else if (noteInOctave == 9) baseNote = U"A♯";
-		else if (noteInOctave == 4) baseNote = U"E♯";
-		break;
-	case kSoundAnalysisArea_pitchGrid_key::C_SHARP_MAJOR:
-		// C♯ major: F♯, C♯, G♯, D♯, A♯, E♯, B♯
-		if (noteInOctave == 5) baseNote = U"F♯";
-		else if (noteInOctave == 0) baseNote = U"C♯";
-		else if (noteInOctave == 7) baseNote = U"G♯";
-		else if (noteInOctave == 2) baseNote = U"D♯";
-		else if (noteInOctave == 9) baseNote = U"A♯";
-		else if (noteInOctave == 4) baseNote = U"E♯";
-		else if (noteInOctave == 11) baseNote = U"B♯";
-		break;
-	case kSoundAnalysisArea_pitchGrid_key::F_MAJOR:
-		// F major: B becomes B♭
-		if (noteInOctave == 11) baseNote = U"B♭";
-		break;
-	case kSoundAnalysisArea_pitchGrid_key::B_FLAT_MAJOR:
-		// B♭ major: B becomes B♭, E becomes E♭
-		if (noteInOctave == 11) baseNote = U"B♭";
-		else if (noteInOctave == 4) baseNote = U"E♭";
-		break;
-	case kSoundAnalysisArea_pitchGrid_key::E_FLAT_MAJOR:
-		// E♭ major: B♭, E♭, A♭
-		if (noteInOctave == 11) baseNote = U"B♭";
-		else if (noteInOctave == 4) baseNote = U"E♭";
-		else if (noteInOctave == 8) baseNote = U"A♭";
-		break;
-	case kSoundAnalysisArea_pitchGrid_key::A_FLAT_MAJOR:
-		// A♭ major: B♭, E♭, A♭, D♭
-		if (noteInOctave == 11) baseNote = U"B♭";
-		else if (noteInOctave == 4) baseNote = U"E♭";
-		else if (noteInOctave == 8) baseNote = U"A♭";
-		else if (noteInOctave == 1) baseNote = U"D♭";
-		break;
-	default: // C_MAJOR
-		// No changes needed
-		break;
-	}
+	// Always use standard note names regardless of key (fixed note naming)
+	// No key-dependent changes needed
 	
 	// Return formatted note name with octave
 	static char32 buffer[32];
@@ -580,122 +505,83 @@ static conststring32 midiNoteToNoteName (integer midiNote, kSoundAnalysisArea_pi
 }
 
 // Solfege (singing) note conversion functions for pitch grid
-static conststring32 midiNoteToSolfege (integer midiNote, kSoundAnalysisArea_pitchGrid_key key, kSoundAnalysisArea_pitchGrid_solfegeSystem solfegeSystem) {
+static conststring32 midiNoteToSolfege (integer midiNote, kSoundAnalysisArea_pitchGrid_key key) {
 			// Standard solfege names (using standard ASCII characters for compatibility)
 	static const conststring32 standardSolfege[] = {U"do", U"di", U"re", U"ri", U"mi", U"fa", U"fi", U"sol", U"si", U"la", U"li", U"ti"};
 	
 	// Calculate note in octave
 	integer noteInOctave = midiNote % 12;
 	
-	if (solfegeSystem == kSoundAnalysisArea_pitchGrid_solfegeSystem::MOVABLE_DO) {
-		// Movable Do: Do is always the tonic (first note of the scale)
-		// Map MIDI notes to scale degrees based on key
-		integer scaleDegree;
-		switch (key) {
-		case kSoundAnalysisArea_pitchGrid_key::C_MAJOR:
-			scaleDegree = noteInOctave;
-			break;
-		case kSoundAnalysisArea_pitchGrid_key::G_MAJOR:
-			// G major scale: G A B C D E F# G
-			if (noteInOctave == 6) scaleDegree = 6;      // F# -> fi
-			else if (noteInOctave >= 7) scaleDegree = noteInOctave - 1;
-			else scaleDegree = noteInOctave;
-			break;
-		case kSoundAnalysisArea_pitchGrid_key::D_MAJOR:
-			// D major scale: D E F# G A B C# D
-			if (noteInOctave == 1) scaleDegree = 1;      // C# -> di
-			else if (noteInOctave == 6) scaleDegree = 6;  // F# -> fi
-			else if (noteInOctave >= 2) scaleDegree = noteInOctave - 1;
-			else scaleDegree = noteInOctave;
-			break;
-		case kSoundAnalysisArea_pitchGrid_key::A_MAJOR:
-			// A major scale: A B C# D E F# G# A
-			if (noteInOctave == 0) scaleDegree = 0;      // C -> do
-			else if (noteInOctave == 1) scaleDegree = 1;  // C# -> di
-			else if (noteInOctave == 6) scaleDegree = 6;  // F# -> fi
-			else if (noteInOctave == 8) scaleDegree = 8;  // G# -> si
-			else if (noteInOctave >= 2) scaleDegree = noteInOctave - 1;
-			else scaleDegree = noteInOctave;
-			break;
-		case kSoundAnalysisArea_pitchGrid_key::E_MAJOR:
-			// E major scale: E F# G# A B C# D# E
-			if (noteInOctave == 1) scaleDegree = 1;      // F# -> fi
-			else if (noteInOctave == 3) scaleDegree = 3;  // G# -> si
-			else if (noteInOctave == 6) scaleDegree = 6;  // C# -> di
-			else if (noteInOctave == 8) scaleDegree = 8;  // D# -> ri
-			else if (noteInOctave >= 4) scaleDegree = noteInOctave - 2;
-			else scaleDegree = noteInOctave;
-			break;
-		case kSoundAnalysisArea_pitchGrid_key::B_MAJOR:
-			// B major scale: B C# D# E F# G# A# B
-			if (noteInOctave == 1) scaleDegree = 1;      // C# -> di
-			else if (noteInOctave == 3) scaleDegree = 3;  // D# -> ri
-			else if (noteInOctave == 6) scaleDegree = 6;  // F# -> fi
-			else if (noteInOctave == 8) scaleDegree = 8;  // G# -> si
-			else if (noteInOctave == 10) scaleDegree = 10; // A# -> li
-			else if (noteInOctave >= 4) scaleDegree = noteInOctave - 2;
-			else scaleDegree = noteInOctave;
-			break;
-		case kSoundAnalysisArea_pitchGrid_key::F_SHARP_MAJOR:
-			// F# major scale: F# G# A# B C# D# E# F#
-			if (noteInOctave == 0) scaleDegree = 0;      // F# -> fi
-			else if (noteInOctave == 2) scaleDegree = 2;  // G# -> si
-			else if (noteInOctave == 4) scaleDegree = 4;  // A# -> li
-			else if (noteInOctave == 6) scaleDegree = 6;  // C# -> di
-			else if (noteInOctave == 8) scaleDegree = 8;  // D# -> ri
-			else if (noteInOctave == 10) scaleDegree = 10; // E# -> mi
-			else if (noteInOctave >= 1) scaleDegree = noteInOctave - 1;
-			else scaleDegree = noteInOctave;
-			break;
-		case kSoundAnalysisArea_pitchGrid_key::C_SHARP_MAJOR:
-			// C# major scale: C# D# E# F# G# A# B# C#
-			if (noteInOctave == 0) scaleDegree = 0;      // C# -> di
-			else if (noteInOctave == 2) scaleDegree = 2;  // D# -> ri
-			else if (noteInOctave == 4) scaleDegree = 4;  // E# -> mi
-			else if (noteInOctave == 6) scaleDegree = 6;  // F# -> fi
-			else if (noteInOctave == 8) scaleDegree = 8;  // G# -> si
-			else if (noteInOctave == 10) scaleDegree = 10; // A# -> li
-			else if (noteInOctave == 11) scaleDegree = 11; // B# -> ti
-			else if (noteInOctave >= 1) scaleDegree = noteInOctave - 1;
-			else scaleDegree = noteInOctave;
-			break;
-		case kSoundAnalysisArea_pitchGrid_key::F_MAJOR:
-			// F major scale: F G A Bb C D E F
-			if (noteInOctave == 10) scaleDegree = 10;    // Bb -> ti
-			else scaleDegree = noteInOctave;
-			break;
-		case kSoundAnalysisArea_pitchGrid_key::B_FLAT_MAJOR:
-			// Bb major scale: Bb C D Eb F G A Bb
-			if (noteInOctave == 10) scaleDegree = 10;    // Bb -> ti
-			else if (noteInOctave == 3) scaleDegree = 3;  // Eb -> mi
-			else scaleDegree = noteInOctave;
-			break;
-		case kSoundAnalysisArea_pitchGrid_key::E_FLAT_MAJOR:
-			// Eb major scale: Eb F G Ab Bb C D Eb
-			if (noteInOctave == 10) scaleDegree = 10;    // Bb -> ti
-			else if (noteInOctave == 3) scaleDegree = 3;  // Eb -> mi
-			else if (noteInOctave == 8) scaleDegree = 8;  // Ab -> la
-			else scaleDegree = noteInOctave;
-			break;
-		case kSoundAnalysisArea_pitchGrid_key::A_FLAT_MAJOR:
-			// Ab major scale: Ab Bb C Db Eb F G Ab
-			if (noteInOctave == 10) scaleDegree = 10;    // Bb -> ti
-			else if (noteInOctave == 3) scaleDegree = 3;  // Eb -> mi
-			else if (noteInOctave == 8) scaleDegree = 8;  // Ab -> la
-			else if (noteInOctave == 1) scaleDegree = 1;  // Db -> di
-			else scaleDegree = noteInOctave;
-			break;
-		default:
-			scaleDegree = noteInOctave;
-			break;
-		}
-		return standardSolfege[scaleDegree % 12];
-	} else {
-		// Fixed Do: Do is always C, Re is always D, etc.
-		// In piano roll mode, we don't need key-dependent adjustments
-		// Just return the standard solfege name for the note
-		return standardSolfege[noteInOctave];
+	// Movable Do: Do is always the tonic (first note of the scale)
+	// Each key maps all 12 notes to solfege names starting from the tonic
+	// Fixed Do is just Movable Do in C major, so we use the same logic for all cases
+	integer scaleDegree;
+	switch (key) {
+	case kSoundAnalysisArea_pitchGrid_key::C_MAJOR:
+		// C major: C=do, C♯=di, D=re, D♯=ri, E=mi, F=fa, F♯=fi, G=sol, G♯=si, A=la, A♯=li, B=ti
+		scaleDegree = noteInOctave;
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::G_MAJOR:
+		// G major: G=do, G♯=di, A=re, A♯=ri, B=mi, C=fa, C♯=fi, D=sol, D♯=si, E=la, F=li, F♯=ti
+		if (noteInOctave == 6) scaleDegree = 6;      // F♯ -> ti
+		else if (noteInOctave >= 7) scaleDegree = noteInOctave - 7;  // G=0, G♯=1, A=2, A♯=3, B=4, C=5, C♯=6, D=7, D♯=8, E=9, F=10
+		else scaleDegree = noteInOctave + 5;          // C=5, C♯=6, D=7, D♯=8, E=9, F=10, F♯=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::D_MAJOR:
+		// D major: D=do, D♯=di, E=re, F=ri, F♯=mi, G=fa, G♯=fi, A=sol, A♯=si, B=la, C=li, C♯=ti
+		if (noteInOctave >= 2) scaleDegree = noteInOctave - 2;  // D=0, D♯=1, E=2, F=3, F♯=4, G=5, G♯=6, A=7, A♯=8, B=9, C=10, C♯=11
+		else scaleDegree = noteInOctave + 10;         // C=10, C♯=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::A_MAJOR:
+		// A major: A=do, A♯=di, B=re, C=ri, C♯=mi, D=fa, D♯=fi, E=sol, F=si, F♯=la, G=li, G♯=ti
+		if (noteInOctave >= 9) scaleDegree = noteInOctave - 9;  // A=0, A♯=1, B=2
+		else scaleDegree = noteInOctave + 3;          // C=3, C♯=4, D=5, D♯=6, E=7, F=8, F♯=9, G=10, G♯=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::E_MAJOR:
+		// E major: E=do, F=di, F♯=re, G=ri, G♯=mi, A=fa, A♯=fi, B=sol, C=si, C♯=la, D=li, D♯=ti
+		if (noteInOctave >= 4) scaleDegree = noteInOctave - 4;  // E=0, F=1, F♯=2, G=3, G♯=4
+		else scaleDegree = noteInOctave + 8;          // A=8, A♯=9, B=10, C=11, C♯=0, D=1, D♯=2
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::B_MAJOR:
+		// B major: B=do, C=di, C♯=re, D=ri, D♯=mi, E=fa, F=fi, F♯=sol, G=si, G♯=la, A=li, A♯=ti
+		if (noteInOctave >= 11) scaleDegree = noteInOctave - 11; // B=0
+		else scaleDegree = noteInOctave + 1;          // C=1, C♯=2, D=3, D♯=4, E=5, F=6, F♯=7, G=8, G♯=9, A=10, A♯=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::F_SHARP_MAJOR:
+		// F♯ major: F♯=do, G=di, G♯=re, A=ri, A♯=mi, B=fa, C=fi, C♯=sol, D=si, D♯=la, E=li, F=ti
+		if (noteInOctave >= 6) scaleDegree = noteInOctave - 6;  // F♯=0, G=1, G♯=2, A=3, A♯=4, B=5
+		else scaleDegree = noteInOctave + 6;          // C=6, C♯=7, D=8, D♯=9, E=10, F=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::C_SHARP_MAJOR:
+		// C♯ major: C♯=do, D=di, D♯=re, E=ri, F=mi, F♯=fa, G=fi, G♯=sol, A=si, A♯=la, B=li, C=ti
+		if (noteInOctave >= 1) scaleDegree = noteInOctave - 1;  // C♯=0, D=1, D♯=2, E=3, F=4, F♯=5, G=6, G♯=7, A=8, A♯=9, B=10
+		else scaleDegree = noteInOctave + 11;         // C=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::F_MAJOR:
+		// F major: F=do, F♯=di, G=re, G♯=ri, A=mi, B♭=fa, B=fi, C=sol, C♯=si, D=la, D♯=li, E=ti
+		if (noteInOctave >= 5) scaleDegree = noteInOctave - 5;  // F=0, F♯=1, G=2, G♯=3, A=4
+		else scaleDegree = noteInOctave + 7;          // B♭=7, B=8, C=9, C♯=10, D=11, D♯=0, E=1
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::B_FLAT_MAJOR:
+		// B♭ major: B♭=do, B=di, C=re, C♯=ri, D=mi, E♭=fa, E=fi, F=sol, F♯=si, G=la, G♯=li, A=ti
+		if (noteInOctave >= 10) scaleDegree = noteInOctave - 10; // B♭=0, B=1
+		else scaleDegree = noteInOctave + 2;          // C=2, C♯=3, D=4, E♭=5, E=6, F=7, F♯=8, G=9, G♯=10, A=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::E_FLAT_MAJOR:
+		// E♭ major: E♭=do, E=di, F=re, F♯=ri, G=mi, A♭=fa, A=fi, B♭=sol, B=si, C=la, C♯=li, D=ti
+		if (noteInOctave >= 3) scaleDegree = noteInOctave - 3;  // E♭=0, E=1, F=2
+		else scaleDegree = noteInOctave + 9;          // A♭=9, A=10, B♭=11, B=0, C=1, C♯=2, D=3
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::A_FLAT_MAJOR:
+		// A♭ major: A♭=do, A=di, B♭=re, B=ri, C=mi, D♭=fa, D=fi, E♭=sol, E=si, F=la, F♯=li, G=ti
+		if (noteInOctave >= 8) scaleDegree = noteInOctave - 8;  // A♭=0, A=1, B♭=2, B=3
+		else scaleDegree = noteInOctave + 4;          // C=4, D♭=5, D=6, E♭=7, E=8, F=9, F♯=10, G=11
+		break;
+	default:
+		scaleDegree = noteInOctave;
+		break;
 	}
+	return standardSolfege[scaleDegree % 12];
 }
 
 static void tryToComputeSpectrogram (SoundAnalysisArea me) {
@@ -1911,7 +1797,7 @@ static void menu_cb_pitchSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 	LABEL (U"Pitch grid settings:")
 	OPTIONMENU_ENUM (kSoundAnalysisArea_pitchGrid_key, pitchGridKey, U"Key signature", my default_pitchGrid_key ())
 	BOOLEAN (pitchGridShowNoteNames, U"Show note names", my default_pitchGrid_showNoteNames ())
-	OPTIONMENU_ENUM (kSoundAnalysisArea_pitchGrid_solfegeSystem, pitchGridSolfegeSystem, U"Solfege system", my default_pitchGrid_solfegeSystem ())
+
 	MUTABLE_LABEL (note1, U"")
 	MUTABLE_LABEL (note2, U"")
 	EDITOR_OK
@@ -1925,8 +1811,7 @@ static void menu_cb_pitchSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 	SET_ENUM (pitchGridKey, kSoundAnalysisArea_pitchGrid_key,
 	        my instancePref_pitchGrid_key ())
 	SET_BOOLEAN (pitchGridShowNoteNames, my instancePref_pitchGrid_showNoteNames ())
-	SET_ENUM (pitchGridSolfegeSystem, kSoundAnalysisArea_pitchGrid_solfegeSystem,
-	        my instancePref_pitchGrid_solfegeSystem ())
+
 	if (my instancePref_pitch_viewFrom () !=
 	                Melder_atof (my default_pitch_viewFrom ()) ||
 	        my instancePref_pitch_viewTo () !=
@@ -1972,7 +1857,7 @@ static void menu_cb_pitchSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 	my setInstancePref_pitch_drawingMethod (drawingMethod);
 	my setInstancePref_pitchGrid_key (pitchGridKey);
 	my setInstancePref_pitchGrid_showNoteNames (pitchGridShowNoteNames);
-	my setInstancePref_pitchGrid_solfegeSystem (pitchGridSolfegeSystem);
+
 	my d_pitch.reset ();
 	my d_intensity.reset ();
 	my d_pulses.reset ();
@@ -3719,7 +3604,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		// Display format: "77 F(4) | fa" or just "77" if note names disabled
 		if (my instancePref_pitchGrid_showNoteNames ()) {
 			conststring32 noteName = midiNoteToNoteName (midiNote, my instancePref_pitchGrid_key ());
-			conststring32 solfegeName = midiNoteToSolfege (midiNote, my instancePref_pitchGrid_key (), my instancePref_pitchGrid_solfegeSystem ());
+			conststring32 solfegeName = midiNoteToSolfege (midiNote, my instancePref_pitchGrid_key ());
 			Graphics_text (my graphics (), my endWindow (), my d_pitchGrid_cursor,
 			        midiNote, U" ", noteName, U" | ", solfegeName);
 		} else {
@@ -3826,9 +3711,7 @@ void structSoundAnalysisArea ::v9_repairPreferences () {
 		our setInstancePref_pitchGrid_key (kSoundAnalysisArea_pitchGrid_key::C_MAJOR);
 	}
 	// Validate pitch grid solfege system setting
-	if ((int)our instancePref_pitchGrid_solfegeSystem () < 1 || (int)our instancePref_pitchGrid_solfegeSystem () > 2) {
-		our setInstancePref_pitchGrid_solfegeSystem (kSoundAnalysisArea_pitchGrid_solfegeSystem::FIXED_DO);
-	}
+
 	if (!our v_hasSpectrogram ())
 		our setInstancePref_spectrogram_show (
 		        false);   // TODO: dubious, because what other editors will
