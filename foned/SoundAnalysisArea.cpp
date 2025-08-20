@@ -31,8 +31,6 @@
 #include "Sound_and_MultiSampledSpectrogram.h"
 #include "Spectrogram.h"
 
-Boolean CQT = true;   // for using CQT instead of FFT
-
 Thing_implement (SoundAnalysisArea, FunctionArea, 0);
 
 #include "enums_getText.h"
@@ -100,7 +98,7 @@ static autoSound extractSound (SoundAnalysisArea me, double tmin, double tmax) {
 autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
         double binsPerOctave, double minimumTimeStep1,
         kSound_to_Spectrogram_windowShape windowType,
-        double maximumTimeOversampling) {
+        double maximumTimeOversampling, double Q) {
 	try {
 		const double nyquist = 0.5 / my dx;
 		if (fmin <= 0.0) fmin = 55.0;
@@ -118,13 +116,12 @@ autoSpectrogram Sound_to_CQT_Ultra_Fast (Sound me, double fmin, double fmax,
 		const integer LOW_FREQ_SAMPLE_STEP = 2;
 
 		// 高频段（> C6）：
-		const integer HIGH_FREQ_TIME_STEP = 3;
+		const integer HIGH_FREQ_TIME_STEP = 2;
 		const integer HIGH_FREQ_SAMPLE_STEP = 3;
 		const integer HIGH_FREQ_FREQ_STEP = 2;
 
 		const double ENHANCED_KERNEL_THRESHOLD = 1e-5;
 
-		const double Q = 1.0 / (pow (2.0, 1.0 / binsPerOctave) - 1.0);
 		const integer numberOfFreqs =
 		        Melder_iround (binsPerOctave * log2 (fmax / fmin));
 		if (numberOfFreqs < 1) return autoSpectrogram ();
@@ -486,28 +483,122 @@ static integer frequencyToMidiNoteInteger (double frequency) {
 	return Melder_iround (frequencyToMidiNote (frequency));
 }
 
+// Note name conversion functions for pitch grid
+static conststring32 midiNoteToNoteName (integer midiNote, kSoundAnalysisArea_pitchGrid_key key) {
+	// Note names in C major (natural notes) - using Unicode sharp (♯) and flat (♭) symbols
+	static const conststring32 cMajorNotes[] = {U"C", U"C♯", U"D", U"D♯", U"E", U"F", U"F♯", U"G", U"G♯", U"A", U"A♯", U"B"};
+	
+	// Calculate octave (middle C = 60, so octave = (midiNote - 12) / 12)
+	integer octave = (midiNote - 12) / 12;
+	integer noteInOctave = midiNote % 12;
+	
+	// Get base note name
+	conststring32 baseNote = cMajorNotes[noteInOctave];
+	
+	// Always use standard note names regardless of key (fixed note naming)
+	// No key-dependent changes needed
+	
+	// Return formatted note name with octave
+	static char32 buffer[32];
+	Melder_sprint (buffer, 32, baseNote, U"(", octave, U")");
+	return buffer;
+}
+
+// Solfege (singing) note conversion functions for pitch grid
+static conststring32 midiNoteToSolfege (integer midiNote, kSoundAnalysisArea_pitchGrid_key key) {
+			// Standard solfege names (using standard ASCII characters for compatibility)
+	static const conststring32 standardSolfege[] = {U"do", U"di", U"re", U"ri", U"mi", U"fa", U"fi", U"sol", U"si", U"la", U"li", U"ti"};
+	
+	// Calculate note in octave
+	integer noteInOctave = midiNote % 12;
+	
+	// Movable Do: Do is always the tonic (first note of the scale)
+	// Each key maps all 12 notes to solfege names starting from the tonic
+	// Fixed Do is just Movable Do in C major, so we use the same logic for all cases
+	integer scaleDegree;
+	switch (key) {
+	case kSoundAnalysisArea_pitchGrid_key::C_MAJOR:
+		// C major: C=do, C♯=di, D=re, D♯=ri, E=mi, F=fa, F♯=fi, G=sol, G♯=si, A=la, A♯=li, B=ti
+		scaleDegree = noteInOctave;
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::G_MAJOR:
+		// G major: G=do, G♯=di, A=re, A♯=ri, B=mi, C=fa, C♯=fi, D=sol, D♯=si, E=la, F=li, F♯=ti
+		if (noteInOctave == 6) scaleDegree = 6;      // F♯ -> ti
+		else if (noteInOctave >= 7) scaleDegree = noteInOctave - 7;  // G=0, G♯=1, A=2, A♯=3, B=4, C=5, C♯=6, D=7, D♯=8, E=9, F=10
+		else scaleDegree = noteInOctave + 5;          // C=5, C♯=6, D=7, D♯=8, E=9, F=10, F♯=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::D_MAJOR:
+		// D major: D=do, D♯=di, E=re, F=ri, F♯=mi, G=fa, G♯=fi, A=sol, A♯=si, B=la, C=li, C♯=ti
+		if (noteInOctave >= 2) scaleDegree = noteInOctave - 2;  // D=0, D♯=1, E=2, F=3, F♯=4, G=5, G♯=6, A=7, A♯=8, B=9, C=10, C♯=11
+		else scaleDegree = noteInOctave + 10;         // C=10, C♯=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::A_MAJOR:
+		// A major: A=do, A♯=di, B=re, C=ri, C♯=mi, D=fa, D♯=fi, E=sol, F=si, F♯=la, G=li, G♯=ti
+		if (noteInOctave >= 9) scaleDegree = noteInOctave - 9;  // A=0, A♯=1, B=2
+		else scaleDegree = noteInOctave + 3;          // C=3, C♯=4, D=5, D♯=6, E=7, F=8, F♯=9, G=10, G♯=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::E_MAJOR:
+		// E major: E=do, F=di, F♯=re, G=ri, G♯=mi, A=fa, A♯=fi, B=sol, C=si, C♯=la, D=li, D♯=ti
+		if (noteInOctave >= 4) scaleDegree = noteInOctave - 4;  // E=0, F=1, F♯=2, G=3, G♯=4
+		else scaleDegree = noteInOctave + 8;          // A=8, A♯=9, B=10, C=11, C♯=0, D=1, D♯=2
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::B_MAJOR:
+		// B major: B=do, C=di, C♯=re, D=ri, D♯=mi, E=fa, F=fi, F♯=sol, G=si, G♯=la, A=li, A♯=ti
+		if (noteInOctave >= 11) scaleDegree = noteInOctave - 11; // B=0
+		else scaleDegree = noteInOctave + 1;          // C=1, C♯=2, D=3, D♯=4, E=5, F=6, F♯=7, G=8, G♯=9, A=10, A♯=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::F_SHARP_MAJOR:
+		// F♯ major: F♯=do, G=di, G♯=re, A=ri, A♯=mi, B=fa, C=fi, C♯=sol, D=si, D♯=la, E=li, F=ti
+		if (noteInOctave >= 6) scaleDegree = noteInOctave - 6;  // F♯=0, G=1, G♯=2, A=3, A♯=4, B=5
+		else scaleDegree = noteInOctave + 6;          // C=6, C♯=7, D=8, D♯=9, E=10, F=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::C_SHARP_MAJOR:
+		// C♯ major: C♯=do, D=di, D♯=re, E=ri, F=mi, F♯=fa, G=fi, G♯=sol, A=si, A♯=la, B=li, C=ti
+		if (noteInOctave >= 1) scaleDegree = noteInOctave - 1;  // C♯=0, D=1, D♯=2, E=3, F=4, F♯=5, G=6, G♯=7, A=8, A♯=9, B=10
+		else scaleDegree = noteInOctave + 11;         // C=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::F_MAJOR:
+		// F major: F=do, F♯=di, G=re, G♯=ri, A=mi, B♭=fa, B=fi, C=sol, C♯=si, D=la, D♯=li, E=ti
+		if (noteInOctave >= 5) scaleDegree = noteInOctave - 5;  // F=0, F♯=1, G=2, G♯=3, A=4
+		else scaleDegree = noteInOctave + 7;          // B♭=7, B=8, C=9, C♯=10, D=11, D♯=0, E=1
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::B_FLAT_MAJOR:
+		// B♭ major: B♭=do, B=di, C=re, C♯=ri, D=mi, E♭=fa, E=fi, F=sol, F♯=si, G=la, G♯=li, A=ti
+		if (noteInOctave >= 10) scaleDegree = noteInOctave - 10; // B♭=0, B=1
+		else scaleDegree = noteInOctave + 2;          // C=2, C♯=3, D=4, E♭=5, E=6, F=7, F♯=8, G=9, G♯=10, A=11
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::E_FLAT_MAJOR:
+		// E♭ major: E♭=do, E=di, F=re, F♯=ri, G=mi, A♭=fa, A=fi, B♭=sol, B=si, C=la, C♯=li, D=ti
+		if (noteInOctave >= 3) scaleDegree = noteInOctave - 3;  // E♭=0, E=1, F=2
+		else scaleDegree = noteInOctave + 9;          // A♭=9, A=10, B♭=11, B=0, C=1, C♯=2, D=3
+		break;
+	case kSoundAnalysisArea_pitchGrid_key::A_FLAT_MAJOR:
+		// A♭ major: A♭=do, A=di, B♭=re, B=ri, C=mi, D♭=fa, D=fi, E♭=sol, E=si, F=la, F♯=li, G=ti
+		if (noteInOctave >= 8) scaleDegree = noteInOctave - 8;  // A♭=0, A=1, B♭=2, B=3
+		else scaleDegree = noteInOctave + 4;          // C=4, D♭=5, D=6, E♭=7, E=8, F=9, F♯=10, G=11
+		break;
+	default:
+		scaleDegree = noteInOctave;
+		break;
+	}
+	return standardSolfege[scaleDegree % 12];
+}
+
 static void tryToComputeSpectrogram (SoundAnalysisArea me) {
 
 	printf ("%s \n", __func__);
 
-	if (CQT && my instancePref_cqt_show ()) {
+	if (my instancePref_cqt_show ()) {
 #if cocoa
 		double mediaTimeStart = CACurrentMediaTime () * 1000;
 #endif
 		autoMelderProgressOff progress;
-		// const double margin =
-		//         (my instancePref_spectrogram_windowShape () ==
-		//                                 kSound_to_Spectrogram_windowShape::
-		//                                         GAUSSIAN
-		//                         ? my instancePref_spectrogram_windowLength ()
-		//                         : 0.5 * my
-		//                         instancePref_spectrogram_windowLength ());
-
-		// 修复margin计算，使用CQT最大窗口长度作为margin
 		const double binsPerOctave =
 		        getBinsPerOctaveFromEnum (my instancePref_cqt_binsPerOctave ());
-		const double Q = 1.0 / (pow (2.0, 1.0 / binsPerOctave) - 1.0);
-		const double fmin = my instancePref_spectrogram_viewFrom ();
+		const double qScale = my instancePref_cqt_qScale ();
+		const double Q = 1.0 / (pow (2.0, 1.0 / binsPerOctave) - 1.0) * qScale;
+		double fmin = my instancePref_spectrogram_viewFrom ();
+		if (fmin <= 0.0) fmin = 55.0;   // lower limit, 55 Hz, midi note A1
 
 		// 使用CQT最大窗口长度作为margin
 		const double maxWindowLength = Q / fmin;
@@ -516,12 +607,10 @@ static void tryToComputeSpectrogram (SoundAnalysisArea me) {
 		try {
 			autoSound sound = extractSound (
 			        me, my startWindow () - margin, my endWindow () + margin);
-			const double binsPerOctave = getBinsPerOctaveFromEnum (
-			        my instancePref_cqt_binsPerOctave ());
 			my d_spectrogram = Sound_to_CQT_Ultra_Fast (sound.get (),
 			        my instancePref_spectrogram_viewFrom (),
 			        my instancePref_spectrogram_viewTo (), binsPerOctave, 0.02,
-			        kSound_to_Spectrogram_windowShape::GAUSSIAN, 1.0);
+			        kSound_to_Spectrogram_windowShape::GAUSSIAN, 1.0, Q);
 			my d_spectrogram->xmin = my startWindow ();
 			my d_spectrogram->xmax = my endWindow ();
 		} catch (MelderError) {
@@ -702,7 +791,7 @@ static void tryToComputePulses (SoundAnalysisArea me) {
  will (try to) create an Analysis if it does not exist.
  */
 static void tryToHaveSpectrogram (SoundAnalysisArea me) {
-	if (CQT) {
+	if (my instancePref_cqt_show ()) {
 		if (!my d_spectrogram && my endWindow () - my startWindow () <=
 		                                 my instancePref_longestAnalysis ())
 			tryToComputeSpectrogram (me);
@@ -819,7 +908,7 @@ bool structSoundAnalysisArea ::v_mouse (GuiDrawingArea_MouseEvent event,
 
 	if (our isMoveWhileButtonDown && x_world > our startWindow () &&
 	        x_world < our endWindow ()) {
-		if (CQT && our instancePref_cqt_show () &&
+		if (our instancePref_cqt_show () &&
 		        our instancePref_spectrogram_show ()) {
 			// Use logarithmic scale for CQT mode
 			// @lixu 临时关闭计算-NO
@@ -1643,9 +1732,6 @@ static void menu_cb_showCQT (SoundAnalysisArea me, EDITOR_ARGS) {
 	GuiMenuItem_check (
 	        my cqtToggle, my instancePref_cqt_show ());   // update UI
 
-	// Control the global CQT boolean
-	CQT = my instancePref_cqt_show ();
-
 	// Force spectrogram refresh when CQT mode changes
 	my d_spectrogram.reset ();
 	FunctionEditor_redraw (my functionEditor ());
@@ -1656,11 +1742,17 @@ static void menu_cb_cqtSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 	EDITOR_FORM (U"CQT settings", U"CQT Settings")
 	OPTIONMENU_ENUM (kCQT_binsPerOctave, binsPerOctave, U"Bins per octave",
 	        my default_cqt_binsPerOctave ())
+	POSITIVE (qScale, U"Q scale (range: 0.1-10.0)", my default_cqt_qScale ())
 	EDITOR_OK
 	SET_ENUM (binsPerOctave, kCQT_binsPerOctave,
 	        my instancePref_cqt_binsPerOctave ())
+	SET_REAL (qScale, my instancePref_cqt_qScale ())
 	EDITOR_DO
+	// Validate Q scale range
+	if (qScale < 0.1) qScale = 0.1;
+	if (qScale > 10.0) qScale = 10.0;
 	my setInstancePref_cqt_binsPerOctave (binsPerOctave);
+	my setInstancePref_cqt_qScale (qScale);
 	my d_spectrogram.reset ();
 	FunctionEditor_redraw (my functionEditor ());
 	EDITOR_END
@@ -1701,6 +1793,11 @@ static void menu_cb_pitchSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 	        U"Analysis method", my default_pitch_method ())
 	OPTIONMENU_ENUM (kSoundAnalysisArea_pitch_drawingMethod, drawingMethod,
 	        U"Drawing method", my default_pitch_drawingMethod ())
+	LABEL (U"")
+	LABEL (U"Pitch grid settings:")
+	OPTIONMENU_ENUM (kSoundAnalysisArea_pitchGrid_key, pitchGridKey, U"Key signature", my default_pitchGrid_key ())
+	BOOLEAN (pitchGridShowNoteNames, U"Show note names", my default_pitchGrid_showNoteNames ())
+
 	MUTABLE_LABEL (note1, U"")
 	MUTABLE_LABEL (note2, U"")
 	EDITOR_OK
@@ -1711,6 +1808,10 @@ static void menu_cb_pitchSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 	        my instancePref_pitch_method ())
 	SET_ENUM (drawingMethod, kSoundAnalysisArea_pitch_drawingMethod,
 	        my instancePref_pitch_drawingMethod ())
+	SET_ENUM (pitchGridKey, kSoundAnalysisArea_pitchGrid_key,
+	        my instancePref_pitchGrid_key ())
+	SET_BOOLEAN (pitchGridShowNoteNames, my instancePref_pitchGrid_showNoteNames ())
+
 	if (my instancePref_pitch_viewFrom () !=
 	                Melder_atof (my default_pitch_viewFrom ()) ||
 	        my instancePref_pitch_viewTo () !=
@@ -1754,6 +1855,9 @@ static void menu_cb_pitchSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 	my setInstancePref_pitch_unit (unit);
 	my setInstancePref_pitch_method (analysisMethod);
 	my setInstancePref_pitch_drawingMethod (drawingMethod);
+	my setInstancePref_pitchGrid_key (pitchGridKey);
+	my setInstancePref_pitchGrid_showNoteNames (pitchGridShowNoteNames);
+
 	my d_pitch.reset ();
 	my d_intensity.reset ();
 	my d_pulses.reset ();
@@ -2384,13 +2488,13 @@ static void QUERY_DATA_FOR_REAL__getThirdBandwidth (
         SoundAnalysisArea me, EDITOR_ARGS) {
 	do_getBandwidth (me, 3, optionalInterpreter);
 }
-static void QUERY_DATA_FOR_REAL__getFourthFormant (
-        SoundAnalysisArea me, EDITOR_ARGS) {
-	do_getFormant (me, 4, optionalInterpreter);
-}
 static void QUERY_DATA_FOR_REAL__getFourthBandwidth (
         SoundAnalysisArea me, EDITOR_ARGS) {
 	do_getBandwidth (me, 4, optionalInterpreter);
+}
+static void QUERY_DATA_FOR_REAL__getFourthFormant (
+        SoundAnalysisArea me, EDITOR_ARGS) {
+	do_getFormant (me, 4, optionalInterpreter);
 }
 
 static void QUERY_DATA_FOR_REAL__getFormant (
@@ -2533,8 +2637,8 @@ static void INFO_DATA__pulseListing (SoundAnalysisArea me, EDITOR_ARGS) {
  = 1.25 / my p_pitch_floor; SoundAnalysisArea_haveVisiblePulses (me); if (my
  startSelection() == my endSelection()) Melder_throw (U"Make a selection
  first."); makeQueriable Melder_informationReal (PointProcess_getJitter_xx (my
- d_pulses, my startSelection(), my endSelection(), minimumPeriod, maximumPeriod,
- my p_pulses_maximumPeriodFactor), nullptr);
+ d_pulses, my startSelection(), my endSelection(), minimumPeriod, maximumPeriod, my
+ p_pulses_maximumPeriodFactor), nullptr);
  }
  DIRECT (SoundAnalysisArea, cb_getJitter_local) { cb_getJitter_xx (me,
  PointProcess_getJitter_local); END } DIRECT (SoundAnalysisArea,
@@ -2908,34 +3012,19 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		Graphics_setFontSize (my graphics (), 12);
 		return;
 	}
-	// spectrogram and CQT
-	if (CQT) {
-		if (my instancePref_spectrogram_show ()) tryToHaveSpectrogram (me);
+	// spectrogram and CQT, delete boolean CQT for simplicity
 
-		if (my instancePref_spectrogram_show () && my d_spectrogram) {
-			Spectrogram_paintInside (my d_spectrogram.get (), my graphics (),
-			        my startWindow (), my endWindow (),
-			        my instancePref_spectrogram_viewFrom (),
-			        my instancePref_spectrogram_viewTo (),
-			        my instancePref_spectrogram_maximum (),
-			        my instancePref_spectrogram_autoscaling (),
-			        my instancePref_spectrogram_dynamicRange (),
-			        my instancePref_spectrogram_preemphasis (),
-			        my instancePref_spectrogram_dynamicCompression ());
-		}
-	} else {
-		if (my instancePref_spectrogram_show ()) tryToHaveSpectrogram (me);
-		if (my instancePref_spectrogram_show () && my d_spectrogram) {
-			Spectrogram_paintInside (my d_spectrogram.get (), my graphics (),
-			        my startWindow (), my endWindow (),
-			        my instancePref_spectrogram_viewFrom (),
-			        my instancePref_spectrogram_viewTo (),
-			        my instancePref_spectrogram_maximum (),
-			        my instancePref_spectrogram_autoscaling (),
-			        my instancePref_spectrogram_dynamicRange (),
-			        my instancePref_spectrogram_preemphasis (),
-			        my instancePref_spectrogram_dynamicCompression ());
-		}
+	if (my instancePref_spectrogram_show ()) tryToHaveSpectrogram (me);
+	if (my instancePref_spectrogram_show () && my d_spectrogram) {
+		Spectrogram_paintInside (my d_spectrogram.get (), my graphics (),
+		        my startWindow (), my endWindow (),
+		        my instancePref_spectrogram_viewFrom (),
+		        my instancePref_spectrogram_viewTo (),
+		        my instancePref_spectrogram_maximum (),
+		        my instancePref_spectrogram_autoscaling (),
+		        my instancePref_spectrogram_dynamicRange (),
+		        my instancePref_spectrogram_preemphasis (),
+		        my instancePref_spectrogram_dynamicCompression ());
 	}
 
 	if (my instancePref_pitch_show ()) tryToHavePitch (me);
@@ -3290,7 +3379,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		                        my instancePref_spectrogram_viewTo ());
 
 		// Set window coordinates based on whether we're using CQT log scale
-		if (CQT && my instancePref_cqt_show () &&
+		if (my instancePref_cqt_show () &&
 		        my instancePref_spectrogram_show ()) {
 			// For CQT, use log scale: map frequency range to 0-1
 			// @lixu 临时关闭计算-NO
@@ -3308,7 +3397,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		Graphics_setLineType (my graphics (), Graphics_DRAWN);
 		Graphics_setColour (my graphics (), DataGuiColour_NONEDITABLE);
 
-		if (CQT && my instancePref_cqt_show () &&
+		if (my instancePref_cqt_show () &&
 		        my instancePref_spectrogram_show ()) {
 			// Draw logarithmic frequency scale for CQT
 			double fmin = my instancePref_spectrogram_viewFrom ();
@@ -3452,7 +3541,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		Graphics_setLineType (my graphics (), Graphics_DOTTED);
 		Graphics_setColour (my graphics (), DataGuiColour_NONEDITABLE_SELECTED);
 		if (frequencyCursorVisible) {
-			if (CQT && my instancePref_cqt_show () &&
+			if (my instancePref_cqt_show () &&
 			        my instancePref_spectrogram_show ()) {
 				// For CQT mode, convert frequency to log position
 				double fmin = my instancePref_spectrogram_viewFrom ();
@@ -3508,12 +3597,21 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 		Graphics_setColour (my graphics (), MelderColour (1, 0.576, 0.008));
 		Graphics_setTextAlignment (
 		        my graphics (), Graphics_LEFT, Graphics_HALF);
-		Graphics_text (my graphics (), my endWindow (), my d_pitchGrid_cursor,
-		        Melder_float (Melder_half (my d_pitchInteger + 69)), U" ",
-		        Function_getUnitText (my d_pitch.get (), Pitch_LEVEL_FREQUENCY,
-		                (int) kPitch_unit::SEMITONES_440,
-		                Function_UNIT_TEXT_SHORT |
-		                        Function_UNIT_TEXT_GRAPHICAL));
+		
+		// Calculate MIDI note number
+		const integer midiNote = my d_pitchInteger + 69;
+		
+		// Display format: "77 F(4) | fa" or just "77" if note names disabled
+		if (my instancePref_pitchGrid_showNoteNames ()) {
+			conststring32 noteName = midiNoteToNoteName (midiNote, my instancePref_pitchGrid_key ());
+			conststring32 solfegeName = midiNoteToSolfege (midiNote, my instancePref_pitchGrid_key ());
+			Graphics_text (my graphics (), my endWindow (), my d_pitchGrid_cursor,
+			        midiNote, U" ", noteName, U" | ", solfegeName);
+		} else {
+			Graphics_text (my graphics (), my endWindow (), my d_pitchGrid_cursor,
+			        midiNote);
+		}
+		
 		Graphics_setLineType (my graphics (), Graphics_DRAWN);
 	}
 }
@@ -3602,6 +3700,18 @@ void structSoundAnalysisArea ::v9_repairPreferences () {
 		our setInstancePref_log2_toLogFile (true);
 		our setInstancePref_log2_toInfoWindow (true);
 	}
+	if (!(our instancePref_cqt_qScale () >= 0.1 &&
+	            our instancePref_cqt_qScale () <=
+	                    10.0)) {   // NaN-safe test and range validation
+		our setInstancePref_cqt_qScale (
+		        Melder_atof (our default_cqt_qScale ()));
+	}
+	// Validate pitch grid key setting
+	if ((int)our instancePref_pitchGrid_key () < 1 || (int)our instancePref_pitchGrid_key () > 12) {
+		our setInstancePref_pitchGrid_key (kSoundAnalysisArea_pitchGrid_key::C_MAJOR);
+	}
+	// Validate pitch grid solfege system setting
+
 	if (!our v_hasSpectrogram ())
 		our setInstancePref_spectrogram_show (
 		        false);   // TODO: dubious, because what other editors will
