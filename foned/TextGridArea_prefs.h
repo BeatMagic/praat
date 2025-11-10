@@ -18,27 +18,45 @@
 
 Prefs_begin (TextGridArea)
 
-	ClassPrefs_overrideBool       (TextGridArea, picture_garnish,          1, true)
+        ClassPrefs_overrideBool (TextGridArea, picture_garnish, 1, true)
 
-	InstancePrefs_addBool         (TextGridArea, useTextStyles,            1, false)
-	InstancePrefs_addDouble       (TextGridArea, fontSize,                 1, U"18")
-	InstancePrefs_addEnum         (TextGridArea, alignment,                1, kGraphics_horizontalAlignment, DEFAULT)
-	InstancePrefs_addBool         (TextGridArea, shiftDragMultiple,        1, true)
-	InstancePrefs_addEnum         (TextGridArea, showNumberOf,             1, kTextGridArea_showNumberOf, DEFAULT)
-	InstancePrefs_addEnum         (TextGridArea, greenMethod,              1, kMelder_string, DEFAULT)
-	InstancePrefs_addString       (TextGridArea, greenString,              1, U"some text here for green paint")
-	ClassPrefs_addBool            (TextGridArea, picture_showBoundaries,   1, true)
-	ClassPrefs_addBool            (TextGridArea, picture_pitch_speckle,    1, false)
-	InstancePrefs_addString       (TextGridArea, align_language,           1, U"English")
-	InstancePrefs_addBool         (TextGridArea, align_includeWords,       1, true)
-	InstancePrefs_addBool         (TextGridArea, align_includePhonemes,    1, false)
-	InstancePrefs_addBool         (TextGridArea, align_allowSilences,      1, false)
-	InstancePrefs_addBool         (TextGridArea, allBoundaryLines_show,    1, false)
-	InstancePrefs_addBool         (TextGridArea, allTierNotes_show,        1, false)
-	InstancePrefs_addDouble       (TextGridArea, soundAreaHeight,          1, U"25.0")
-	InstancePrefs_addDouble       (TextGridArea, soundAnalysisAreaHeight,  1, U"55.0")
-	InstancePrefs_addDouble       (TextGridArea, textGridAreaHeight,       1, U"20.0")
+                InstancePrefs_addBool (TextGridArea, useTextStyles, 1,
+                        false) InstancePrefs_addDouble (TextGridArea, fontSize,
+                        1, U"18") InstancePrefs_addEnum (TextGridArea,
+                        alignment, 1, kGraphics_horizontalAlignment,
+                        DEFAULT) InstancePrefs_addBool (TextGridArea,
+                        shiftDragMultiple, 1,
+                        true) InstancePrefs_addEnum (TextGridArea, showNumberOf,
+                        1, kTextGridArea_showNumberOf,
+                        DEFAULT) InstancePrefs_addEnum (TextGridArea,
+                        greenMethod, 1, kMelder_string,
+                        DEFAULT) InstancePrefs_addString (TextGridArea,
+                        greenString, 1, U"some text here for green paint")
+                        ClassPrefs_addBool (TextGridArea,
+                                picture_showBoundaries, 1,
+                                true) ClassPrefs_addBool (TextGridArea,
+                                picture_pitch_speckle, 1,
+                                false) InstancePrefs_addString (TextGridArea,
+                                align_language, 1,
+                                U"English") InstancePrefs_addBool (TextGridArea,
+                                align_includeWords, 1,
+                                true) InstancePrefs_addBool (TextGridArea,
+                                align_includePhonemes, 1,
+                                false) InstancePrefs_addBool (TextGridArea,
+                                align_allowSilences, 1,
+                                false) InstancePrefs_addBool (TextGridArea,
+                                allBoundaryLines_show, 1,
+                                false) InstancePrefs_addBool (TextGridArea,
+                                allTierNotes_show, 1,
+                                false) InstancePrefs_addDouble (TextGridArea,
+                                tierNotesFrequencyResolution, 1,
+                                U"0.05") InstancePrefs_addDouble (TextGridArea,
+                                soundAreaHeight, 1, U"25.0")
+                                InstancePrefs_addDouble (TextGridArea,
+                                        soundAnalysisAreaHeight, 1, U"55.0")
+                                        InstancePrefs_addDouble (TextGridArea,
+                                                textGridAreaHeight, 1, U"20.0")
 
-Prefs_end (TextGridArea)
+                                                Prefs_end (TextGridArea)
 
-/* End of file TextGridArea_prefs.h */
+        /* End of file TextGridArea_prefs.h */

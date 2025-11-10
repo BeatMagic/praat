@@ -30,12 +30,20 @@
 #include <vector>
 
 Thing_define (SoundAnalysisArea, FunctionArea) {
-	SampledXY soundOrLongSound() const { return static_cast <SampledXY> (our function()); }
-	Sound sound() const {
-		return our soundOrLongSound() && Thing_isa (our soundOrLongSound(), classSound) ? (Sound) our soundOrLongSound() : nullptr;
+	SampledXY soundOrLongSound () const {
+		return static_cast<SampledXY> (our function ());
 	}
-	LongSound longSound() const {
-		return our soundOrLongSound() && Thing_isa (our soundOrLongSound(), classLongSound) ? (LongSound) our soundOrLongSound() : nullptr;
+	Sound sound () const {
+		return our soundOrLongSound () &&
+		                       Thing_isa (our soundOrLongSound (), classSound)
+		               ? (Sound) our soundOrLongSound ()
+		               : nullptr;
+	}
+	LongSound longSound () const {
+		return our soundOrLongSound () && Thing_isa (our soundOrLongSound (),
+		                                          classLongSound)
+		               ? (LongSound) our soundOrLongSound ()
+		               : nullptr;
 	}
 
 	autoSpectrogram d_spectrogram;
@@ -45,75 +53,93 @@ Thing_define (SoundAnalysisArea, FunctionArea) {
 	autoIntensity d_intensity;
 	autoFormant d_formant;
 	autoPointProcess d_pulses;
-	GuiMenuItem spectrogramToggle, pitchToggle, intensityToggle, formantToggle, pulsesToggle;
+	GuiMenuItem spectrogramToggle, pitchToggle, intensityToggle, formantToggle,
+	        pulsesToggle;
 	GuiMenuItem pitchGridToggle, cqtToggle;
 	std::vector<std::vector<double>> tierNotesData;
-	MelderCallback <void, structThing, integer> d_clickToChangePitchCallback;
+	MelderCallback<void, structThing, double> d_clickToChangePitchCallback;
 	Thing d_changedBoss;
+	double tierNotesFrequencyResolution = 0.05;   // default resolution
 
 	virtual bool v_hasSpectrogram () { return true; }
-	virtual bool v_hasPitch       () { return true; }
-	virtual bool v_hasIntensity   () { return true; }
-	virtual bool v_hasFormants    () { return true; }
-	virtual bool v_hasPulses      () { return true; }
+	virtual bool v_hasPitch () { return true; }
+	virtual bool v_hasIntensity () { return true; }
+	virtual bool v_hasFormants () { return true; }
+	virtual bool v_hasPulses () { return true; }
 	virtual void v_reset_analysis ();
 
-protected:
-	void v_computeAuxiliaryData () override {
-		our v_reset_analysis ();
-	}
+  protected:
+	void v_computeAuxiliaryData () override { our v_reset_analysis (); }
 
-public:
-	void v_windowChanged () override {
-		our v_reset_analysis ();
-	}
+  public:
+	void v_windowChanged () override { our v_reset_analysis (); }
 	bool hasContentToShow () {
-		return our instancePref_spectrogram_show() || our instancePref_pitch_show() || our instancePref_pitchGrid_show() ||
-				our instancePref_intensity_show() || our instancePref_formant_show();
+		return our instancePref_spectrogram_show () ||
+		       our instancePref_pitch_show () ||
+		       our instancePref_pitchGrid_show () ||
+		       our instancePref_intensity_show () ||
+		       our instancePref_formant_show ();
 	}
 	bool hasPulsesToShow () {
-		return our instancePref_pulses_show() && our endWindow() - our startWindow() <= our instancePref_longestAnalysis() && our d_pulses;
+		return our instancePref_pulses_show () &&
+		       our endWindow () - our startWindow () <=
+		               our instancePref_longestAnalysis () &&
+		       our d_pulses;
 	}
-	void setClickToChangePitchCallback(MelderCallback <void, structThing, integer> clickToChangePitchCallback, Thing changedBoss) {
+	void setClickToChangePitchCallback (
+	        MelderCallback<void, structThing, double>
+	                clickToChangePitchCallback,
+	        Thing changedBoss) {
 		our d_clickToChangePitchCallback = clickToChangePitchCallback;
 		our d_changedBoss = changedBoss;
 	}
 
-public:
-	void v1_info ()
-		override;
-	bool v_mouse (GuiDrawingArea_MouseEvent event, double x_world, double localY_fraction)
-		override;
+  public:
+	void v1_info () override;
+	bool v_mouse (GuiDrawingArea_MouseEvent event, double x_world,
+	        double localY_fraction) override;
 	virtual void v_draw_analysis ();
 	virtual void v_draw_analysis_pulses ();
 	virtual void v_draw_analysis_formants ();
-	void v_createMenus ()
-		override;
+	void v_createMenus () override;
 	virtual void v_createMenuItems_formant (EditorMenu menu);
 
-	#include "SoundAnalysisArea_prefs.h"
+#include "SoundAnalysisArea_prefs.h"
 
 	void v9_repairPreferences () override;
 };
 
 DEFINE_FunctionArea_create (SoundAnalysisArea, Sound)
 
-void SoundAnalysisArea_haveVisibleSpectrogram (SoundAnalysisArea me);
+        void SoundAnalysisArea_haveVisibleSpectrogram (SoundAnalysisArea me);
 void SoundAnalysisArea_haveVisiblePitch (SoundAnalysisArea me);
 void SoundAnalysisArea_haveVisibleIntensity (SoundAnalysisArea me);
 void SoundAnalysisArea_haveVisibleFormants (SoundAnalysisArea me);
 void SoundAnalysisArea_haveVisiblePulses (SoundAnalysisArea me);
 
-bool SoundAnalysisArea_mouse (SoundAnalysisArea me, GuiDrawingArea_MouseEvent event, double x_world, double y_fraction);
+bool SoundAnalysisArea_mouse (SoundAnalysisArea me,
+        GuiDrawingArea_MouseEvent event, double x_world, double y_fraction);
 
 inline void SoundAnalysisArea_drawDefaultLegends (SoundAnalysisArea me) {
-	if (my hasContentToShow () && my endWindow() - my startWindow() <= my instancePref_longestAnalysis())
+	if (my hasContentToShow () && my endWindow () - my startWindow () <=
+	                                      my instancePref_longestAnalysis ())
 		FunctionArea_drawLegend (me,
-			my instancePref_spectrogram_show() ? FunctionArea_legend_GREYS U" %%derived spectrogram" : U"", 1.2 * Melder_BLACK,
-			my instancePref_formant_show()     ? FunctionArea_legend_SPECKLES U" %%derived formants"    : U"", 1.2 * Melder_RED,
-			my instancePref_intensity_show()   ? FunctionArea_legend_LINES U" %%derived intensity"   : U"", 1.2 * Melder_GREEN,
-			my instancePref_pitch_show()       ? FunctionArea_legend_LINES_SPECKLES U" %%derived pitch"       : U"", 1.2 * Melder_BLUE
-		);
+		        my instancePref_spectrogram_show ()
+		                ? FunctionArea_legend_GREYS U" %%derived spectrogram"
+		                : U"",
+		        1.2 * Melder_BLACK,
+		        my instancePref_formant_show ()
+		                ? FunctionArea_legend_SPECKLES U" %%derived formants"
+		                : U"",
+		        1.2 * Melder_RED,
+		        my instancePref_intensity_show ()
+		                ? FunctionArea_legend_LINES U" %%derived intensity"
+		                : U"",
+		        1.2 * Melder_GREEN,
+		        my instancePref_pitch_show ()
+		                ? FunctionArea_legend_LINES_SPECKLES U" %%derived pitch"
+		                : U"",
+		        1.2 * Melder_BLUE);
 }
 
 /* End of file SoundAnalysisArea.h */
