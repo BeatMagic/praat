@@ -29,7 +29,9 @@ Thing_declare (SoundArea);
 Thing_declare (SoundAnalysisArea);
 
 Thing_define (TextGridArea, FunctionArea) {
-	TextGrid textGrid() const { return static_cast <TextGrid> (our function()); }
+	TextGrid textGrid () const {
+		return static_cast<TextGrid> (our function ());
+	}
 	SoundArea borrowedSoundArea = nullptr;
 	SoundAnalysisArea borrowedSoundAnalysisArea = nullptr;
 
@@ -39,50 +41,45 @@ Thing_define (TextGridArea, FunctionArea) {
 	SpellingChecker spellingChecker;
 
 	GuiMenuItem boundaryLinesToggle, tierNotesToggle;
+	GuiMenuItem tierNotesResolution005Toggle, tierNotesResolution025Toggle;
 
-private:
-	void v_specializedHighlightBackground () const
-		override;
+  private:
+	void v_specializedHighlightBackground () const override;
 
-private:
+  private:
 	/* only in v_mouse: */
 	double anchorTime = undefined;
 	integer clickedLeftBoundary = 0;
-	double leftDraggingBoundary = undefined, rightDraggingBoundary = undefined;   // initial dragging range
+	double leftDraggingBoundary = undefined,
+	       rightDraggingBoundary = undefined;   // initial dragging range
 	double draggingTime = undefined;
 	autoBOOLVEC draggingTiers;
 	bool hasBeenDraggedBeyondVicinityRadiusAtLeastOnce = false;
-public:
-	void v1_info ()
-		override;
-	void v_drawInside ()
-		override;
-	bool v_mouse (GuiDrawingArea_MouseEvent event, double x_world, double localY_fraction)
-		override;
-	void v_handleMouseDBLCLK(double x_world)
-		override;
-	GuiMenuItem extractSelectedTextGridPreserveTimesButton, extractSelectedTextGridTimeFromZeroButton;
-	void v_createMenuItems_save (EditorMenu menu)
-		override;
-	void v_createMenuItems_edit (EditorMenu menu)
-		override;
-	void v_createMenus ()
-		override;
-	void v_updateMenuItems ()
-		override;
-	double maximumInitialLengthOfWindow () override {
-		return 30.0;
-	}
+
+  public:
+	void v1_info () override;
+	void v_drawInside () override;
+	bool v_mouse (GuiDrawingArea_MouseEvent event, double x_world,
+	        double localY_fraction) override;
+	void v_handleMouseDBLCLK (double x_world) override;
+	GuiMenuItem extractSelectedTextGridPreserveTimesButton,
+	        extractSelectedTextGridTimeFromZeroButton;
+	void v_createMenuItems_save (EditorMenu menu) override;
+	void v_createMenuItems_edit (EditorMenu menu) override;
+	void v_createMenus () override;
+	void v_updateMenuItems () override;
+	double maximumInitialLengthOfWindow () override { return 30.0; }
 	void v_updateText () override;
 	void v_updateTierNotesData () override;
 
-	#include "TextGridArea_prefs.h"
+#include "TextGridArea_prefs.h"
 };
 
 DEFINE_FunctionArea_create (TextGridArea, TextGrid)
 
-void TextGridArea_drawSelectionViewer (TextGridArea me);
-void TextGridArea_clickSelectionViewer (TextGridArea me, double x_fraction, double y_fraction);
+        void TextGridArea_drawSelectionViewer (TextGridArea me);
+void TextGridArea_clickSelectionViewer (
+        TextGridArea me, double x_fraction, double y_fraction);
 
 /* End of file TextGridArea.h */
 #endif
