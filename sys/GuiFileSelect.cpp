@@ -146,20 +146,29 @@ autostring32 GuiFileSelect_getOutfileName (GuiWindow parent, conststring32 title
 		OPENFILENAMEW openFileName;
 		static WCHAR customFilter [100+2];
 		static WCHAR fullFileNameW [300+2];
+		ZeroMemory (& openFileName, sizeof (OPENFILENAMEW));
 		wcsncpy (fullFileNameW, Melder_peek32toW_fileSystem (defaultName), 300+2);
 		fullFileNameW [300+1] = L'\0';
 		openFileName. lStructSize = sizeof (OPENFILENAMEW);
 		openFileName. hwndOwner = parent && parent -> d_xmShell ? (HWND) XtWindow (parent -> d_xmShell) : nullptr;
+		openFileName. hInstance = nullptr;
 		openFileName. lpstrFilter = nullptr;   // like *.txt
 		openFileName. lpstrCustomFilter = customFilter;
 		openFileName. nMaxCustFilter = 100;
+		openFileName. nFilterIndex = 0;
 		openFileName. lpstrFile = fullFileNameW;
 		openFileName. nMaxFile = 300;
 		openFileName. lpstrFileTitle = nullptr;
+		openFileName. nMaxFileTitle = 0;
 		openFileName. lpstrInitialDir = nullptr;
 		openFileName. lpstrTitle = Melder_peek32toW_fileSystem (title);
 		openFileName. Flags = OFN_LONGNAMES | OFN_OVERWRITEPROMPT | OFN_EXPLORER | OFN_HIDEREADONLY;
 		openFileName. lpstrDefExt = nullptr;
+		openFileName. lpfnHook = nullptr;
+		openFileName. lpTemplateName = nullptr;
+		openFileName. pvReserved = nullptr;
+		openFileName. dwReserved = 0;
+		openFileName. FlagsEx = 0;
 		if (GetSaveFileNameW (& openFileName))
 			outfileName = Melder_Wto32 (fullFileNameW);
 		setlocale (LC_ALL, "C");
